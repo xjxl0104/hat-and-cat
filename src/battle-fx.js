@@ -92,7 +92,7 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
    while(r.count&&r.clock-r.history[r.start].at>life){r.start=(r.start+1)%ENEMY_SAMPLES;r.count--;}
    if(b?.active){const last=r.count?r.history[(r.start+r.count-1)%ENEMY_SAMPLES]:null;if(!last||last.tip.distanceToSquared(b.tip)+last.base.distanceToSquared(b.base)>.00025){if(r.count===ENEMY_SAMPLES){r.start=(r.start+1)%ENEMY_SAMPLES;r.count--;}const q=r.history[(r.start+r.count++)%ENEMY_SAMPLES];q.base.copy(b.base);q.tip.copy(b.tip);q.at=r.clock;}}
    let k=0;for(let i=1;i<r.count;i++){const a=r.history[(r.start+i-1)%ENEMY_SAMPLES],q=r.history[(r.start+i)%ENEMY_SAMPLES],fa=.99-.2*clamp(1-(r.clock-a.at)/life,0,1),fb=.99-.2*clamp(1-(r.clock-q.at)/life,0,1);k=bladeVertex(r.positions,k,a,fa);k=bladeVertex(r.positions,k,a,.99);k=bladeVertex(r.positions,k,q,fb);k=bladeVertex(r.positions,k,a,.99);k=bladeVertex(r.positions,k,q,.99);k=bladeVertex(r.positions,k,q,fb);}
-   r.geometry.setDrawRange(0,k/3);r.attribute.needsUpdate=true;r.mesh.visible=k>0;r.mesh.material.color.set(b?.kind==='thrust'?C.steel:C.clang);
+   r.geometry.setDrawRange(0,k/3);r.attribute.needsUpdate=true;r.mesh.visible=k>0;r.mesh.material.color.set(b?.tint??(b?.kind==='thrust'?C.steel:C.clang));
    if(!r.count&&!b?.active)clearEnemyTrail(r);
   }
  }
@@ -111,19 +111,30 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
  const crescents=instanced(geo.crescent,PROJECTILE_CAP,mat(0xffffff,1,true)),heads=instanced(geo.diamond,PROJECTILE_CAP,mat(C.gold,1,true));
  const coals=instanced(geo.orb,PROJECTILE_CAP,mat(C.fire,1,true)),flames=instanced(geo.flame,PROJECTILE_CAP,mat(C.ember,1,true));
  const drops=instanced(geo.drop,PROJECTILE_CAP,mat(C.blue,1,true)),spray=instanced(geo.orb,PROJECTILE_CAP,mat(C.ice,1,true));
- const projectileMeshes=[arrowShafts,arrowTips,arrowVanes,crescents,heads,coals,flames,drops,spray];
+ // Birthday cakes thrown by the finale boss: sponge, frosting and a cherry.
+ const cakeBases=instanced(geo.box,PROJECTILE_CAP,mat(0xfff1e2,1,true)),cakeTops=instanced(geo.box,PROJECTILE_CAP,mat(0xff8fb8,1,true)),cherries=instanced(geo.box,PROJECTILE_CAP,mat(0xe2364e,1,true));
+ const projectileMeshes=[arrowShafts,arrowTips,arrowVanes,crescents,heads,coals,flames,drops,spray,cakeBases,cakeTops,cherries];
+ // Party confetti: flat paper squares that flutter down and settle on the ground.
+ const CONFETTI_CAP=260,confetti=[],pendingConfetti=[],PARTY=[0xff6f9f,0xffcf5a,0x7fd6ff,0x9df59a,0xc59bff,0xffffff,0xff9b5e],euler=new T.Euler(),confettiMesh=instanced(geo.box,CONFETTI_CAP,mat(0xffffff,1,true));
+ function confettiBurst(p,n=30,force=4,up=4){n=Math.min(reduced?Math.ceil(n/2):n,CONFETTI_CAP-confetti.length);for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=force*(.2+Math.random()*.8),life=1.4+Math.random()*1.4;confetti.push({x:p.x,y:p.y,z:p.z,vx:Math.cos(a)*s,vy:up*(.45+Math.random()*.85),vz:Math.sin(a)*s,rx:Math.random()*6,ry:Math.random()*6,spin:5+Math.random()*9,tint:PARTY[(i+serial)%PARTY.length],life,max:life,landed:false});}}
+ function updateConfetti(dt){for(let i=pendingConfetti.length-1;i>=0;i--){const q=pendingConfetti[i];q.delay-=dt;if(q.delay<=0){confettiBurst(q.p,q.n,q.force,q.up);pendingConfetti.splice(i,1);}}
+  let n=0;for(let i=confetti.length-1;i>=0;i--){const c=confetti[i];c.life-=dt;if(c.life<=0){confetti[i]=confetti[confetti.length-1];confetti.pop();continue;}
+   if(!c.landed){const drag=Math.exp(-dt*2.2);c.vx*=drag;c.vz*=drag;c.vy=Math.max(-1.7,c.vy-7*dt);c.x+=c.vx*dt+Math.sin(time*6+c.rx)*dt*.35;c.y+=c.vy*dt;c.z+=c.vz*dt;c.rx+=c.spin*dt;const floor=groundAt(c.x,c.z,c.y)+.03;if(c.y<=floor&&c.vy<0){c.y=floor;c.landed=true;c.rx=Math.PI/2;}}
+   euler.set(c.rx,c.ry,c.rx*.5);dummy.quaternion.setFromEuler(euler);const s=Math.min(1,c.life/.35);put(confettiMesh,n++,c,dummy.quaternion,.13*s,.13*s,.025,c.tint);}
+  dirty(confettiMesh,n);}
  function travel(e){flight.set(finite(e.vx,finite(e.dirX,1)),finite(e.vy,finite(e.dirY)),finite(e.vz,finite(e.dirZ)));if(flight.lengthSq()<.0001)flight.set(1,0,0);flight.normalize();flightQ.setFromUnitVectors(AXIS,flight);}
  function putArrow(i,p,q,scale=1){put(arrowShafts,i,p,q,scale);put(arrowTips,i,p,q,scale);put(arrowVanes,i,p,q,scale);}
  function lodgeArrow(e){if(lodged.length>=LODGE_CAP)lodged.shift();travel(e);const p=point(e),normal=e.normal||{};lodged.push({p:{x:p.x-flight.x*.6+finite(e.normalX,finite(normal.x))*.015,y:p.y-flight.y*.6+finite(e.normalY,finite(normal.y))*.015,z:p.z-flight.z*.6+finite(e.normalZ,finite(normal.z))*.015},q:flightQ.clone(),life:.6});}
- function updateProjectiles(game,dt){let a=0,b=0,h=0,f=0,w=0,n=0;for(const p of game.projectiles||[]){if(p.dead||p.life<=0||n>=PROJECTILE_CAP)continue;n++;travel(p);const kind=p.kind||'bolt';
+ function updateProjectiles(game,dt){let a=0,b=0,h=0,f=0,w=0,n=0,k=0;for(const p of game.projectiles||[]){if(p.dead||p.life<=0||n>=PROJECTILE_CAP)continue;n++;travel(p);const kind=p.kind||'bolt';
    if(['arrow','bowArrow','ricochetBolt','bolt'].includes(kind))putArrow(a++,p,flightQ,1+finite(p.charge)*.14);
    else if(kind==='bossOrb'){put(coals,f,p,flightQ,.29,.29,.29);put(flames,f++,p,flightQ,.85,1,1);}
+   else if(kind==='cake'){dummy.quaternion.setFromAxisAngle(UP,time*7+finite(p.prevX));const q=dummy.quaternion;put(cakeBases,k,p,q,.44,.26,.44);put(cakeTops,k,{x:p.x,y:p.y+.16,z:p.z},q,.47,.09,.47);put(cherries,k++,{x:p.x,y:p.y+.27,z:p.z},q,.11,.11,.11);}
    else if(kind==='water'){put(drops,w,p,flightQ,.85,.95,.95);put(spray,w++,{x:p.x-flight.x*.55,y:p.y-flight.y*.55,z:p.z-flight.z*.55},flightQ,.085,.06,.06);}
    else if(/catStar|star/i.test(kind))put(heads,h++,p,cameraView.quaternion,.18,.24,.1);
    else {dummy.quaternion.setFromAxisAngle(UP,-Math.atan2(flight.z,flight.x));const size=kind==='returnCrescent'?.72:kind==='windCut'?.56:.42;put(crescents,b++,p,dummy.quaternion,size,.25,size,kind==='reflected'?C.gold:C.ice);}
   }
   for(let i=lodged.length-1;i>=0;i--){const l=lodged[i];l.life-=dt;if(l.life<=0){lodged.splice(i,1);continue;}putArrow(a++,l.p,l.q,Math.min(1,l.life/.1));}
-  dirty(arrowShafts,a);dirty(arrowTips,a);dirty(arrowVanes,a);dirty(crescents,b);dirty(heads,h);dirty(coals,f);dirty(flames,f);dirty(drops,w);dirty(spray,w);
+  dirty(arrowShafts,a);dirty(arrowTips,a);dirty(arrowVanes,a);dirty(crescents,b);dirty(heads,h);dirty(coals,f);dirty(flames,f);dirty(drops,w);dirty(spray,w);dirty(cakeBases,k);dirty(cakeTops,k);dirty(cherries,k);
  }
 
  // Persistent indicators are tied to authoritative state and never pulse.
@@ -193,6 +204,8 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
  function dangerCross(e){const at=point(e),r=alloc('dangerCross',{...e,y:at.y+(e.targetType==='boss'||e.enemyType==='boss'?3.65:2.05)},.16,C.danger);r.g.quaternion.copy(cameraView.quaternion);r.alpha[0]=r.alpha[1]=.85;for(let i=0;i<2;i++){shape(r,i,geo.box,.68,.105,.075).rotation.z=i?Math.PI/4:-Math.PI/4;r.materials[i].color.set(C.danger);}}
  function elementImpact(e,water=false){const r=groundRing({...e,y:finite(e.groundY,finite(e.y)-.55),radius:water?.43:.36},water?C.blue:C.fire,.22,'splash');shape(r,1,water?geo.drop:geo.flame,.16,.22,.16,0,.12,0);burst(point(e),water?C.ice:C.ember,3,2);}
  function emit(e,game){if(!e||!game?.player)return;lastGame=game;if(e.eventId!=null){if(seen.has(e.eventId))return;seen.add(e.eventId);seenOrder.push(e.eventId);if(seenOrder.length>1024)seen.delete(seenOrder.shift());}
+  if(e.type==='bossAwake'&&e.bossKind==='sweetheart')pendingConfetti.push({delay:.95,p:{x:finite(e.x),y:finite(e.y)+1.2,z:finite(e.z)},n:70,force:5.5,up:4.5});
+  if(e.type==='finalDefeated'){const at2=point(e);confettiBurst({...at2,y:at2.y+2.6},120,6,7);pendingConfetti.push({delay:.5,p:{...at2,y:at2.y+3},n:90,force:7,up:6});}
   const actor=(game.enemies||[]).find(a=>a.id===e.targetId||a.id===e.sourceId);if(e.type!=='encounterSpawn'&&actor&&(actor.spawned===false||actor.spawning||actor.state==='spawning'))return;const p=game.player,at=point(e,p);
   switch(e.type){
    case 'swing':case 'meleeActive':break; // Only the actual blade endpoints create the player's trail.
@@ -201,7 +214,7 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
    case 'counterStrike':clearBlade();break; // The ensuing sword stroke and hit carry the gold counter cue.
    case 'mirrorSlash':slash(e,game,true);break;
    case 'hit':case 'hurt':impact(e,game,e.origin==='reaction');break;
-   case 'projectileHit':if(e.kind==='bossOrb')elementImpact(e);else if(e.kind==='water')elementImpact(e,true);else if(!e.targetId||e.targetId==='wall'){impact({...e,targetType:'guard'},game,true);if(['arrow','bowArrow','ricochetBolt'].includes(e.kind))lodgeArrow(e);}break;
+   case 'projectileHit':if(e.kind==='cake'){groundRing({...e,y:finite(e.groundY,finite(e.y)-.55),radius:.7},0xff8fb8,.3,'splash');burst(point(e),0xfff1e2,7,3.2);confettiBurst(point(e),10,2.2,2.4);}else if(e.kind==='bossOrb')elementImpact(e);else if(e.kind==='water')elementImpact(e,true);else if(!e.targetId||e.targetId==='wall'){impact({...e,targetType:'guard'},game,true);if(['arrow','bowArrow','ricochetBolt'].includes(e.kind))lodgeArrow(e);}break;
    case 'kill':burst(at,e.targetType==='slime'?C.goo:C.dust,e.targetType==='boss'?5:2,2.2);break;
    case 'dashStart':burst({...at,y:at.y+.08},C.dust,4,1.5,{x:-finite(e.dirX,p.dirX),z:-finite(e.dirZ,p.dirZ)});break;
    case 'novaPull':groundRing(e,C.purple,finite(e.duration,.28),'pull');break;
@@ -225,7 +238,9 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
    case 'bossRelocate':groundRing({...point(e.from,e),radius:.65},C.ice,.22);groundRing({...point(e.to,e),radius:.65},C.ice,.3);break;
    case 'enemySwing':{
     if(e.unblockable)dangerCross(e);
-    const kind=e.attackKind,physical=(e.enemyType==='guard'&&root.HatPixelEnemies)||(e.enemyType==='boss'&&(e.bossKind||'ironWarden')==='ironWarden'&&root.HatPixelWarden);
+    const kind=e.attackKind,sweet=e.bossKind==='sweetheart',physical=(e.enemyType==='guard'&&root.HatPixelEnemies)||(e.enemyType==='boss'&&(e.bossKind||'ironWarden')==='ironWarden'&&root.HatPixelWarden)||(sweet&&root.HatPixelSweetheart);
+    if(sweet&&kind==='stomp'){const at2=point(e);groundRing({...e,...at2,radius:finite(e.range,3)},0xff8fb8,.34);confettiBurst({...at2,y:at2.y+2.4},46,4.6,5.5);break;}
+    if(sweet&&kind==='charge'){confettiBurst({...at,y:at.y+1.4},12,2,2.5);break;}
     if(physical&&['slash','thrust'].includes(kind))break;
     if(kind==='slash'||!kind)slash(e,game);
     else if(['slam','stomp','slimeSlam','tideSplash'].includes(kind)){const impactPoint=point(e.telegraphOrigin,e);groundRing({...e,...impactPoint,radius:finite(e.range,finite(e.radius,2))},kind==='tideSplash'?C.blue:kind==='slimeSlam'?C.goo:C.red,.28);burst({...impactPoint,y:impactPoint.y+.12},C.dust,4,2.3);}
@@ -250,8 +265,8 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
    else if(r.kind==='consume')r.g.scale.setScalar(out);
    else if(r.kind==='catLeap')r.g.position.set(r.from.x+(r.to.x-r.from.x)*t,r.from.y+(r.to.y-r.from.y)*t+.45+Math.sin(t*Math.PI)*.3,r.from.z+(r.to.z-r.from.z)*t);
   }}
- function update(game,simDt,revealDt=simDt){if(!game?.player)return;lastGame=game;const combatDt=clamp(finite(simDt),0,.1),presentationDt=clamp(finite(revealDt),0,.1);if(combatDt>0){time+=combatDt;updateRigs(game,combatDt);updateSparks(combatDt);}updateBlade(game,combatDt);updateEnemyBlades(game,combatDt);if(presentationDt>0)updateReward(presentationDt);updateProjectiles(game,combatDt);updatePersistent(game);updateWarnings(game);}
- function reset(){time=serial=bladeClock=0;clearBlade();for(const r of enemyTrails)clearEnemyTrail(r);seen.clear();seenOrder.length=0;sparks.length=lodged.length=0;lastGame=null;reward.active=false;reward.age=0;reward.revealed=false;reward.g.visible=false;for(const r of rigs){r.active=false;r.g.visible=false;}for(const m of [sparkMesh,...projectileMeshes,stars])m.count=0;mirror.visible=chargeMark.visible=guardMark.visible=false;for(const m of warningPool){m.visible=false;m.unblockableMark.visible=false;}}
+ function update(game,simDt,revealDt=simDt){if(!game?.player)return;lastGame=game;const combatDt=clamp(finite(simDt),0,.1),presentationDt=clamp(finite(revealDt),0,.1);if(combatDt>0){time+=combatDt;updateRigs(game,combatDt);updateSparks(combatDt);updateConfetti(combatDt);}updateBlade(game,combatDt);updateEnemyBlades(game,combatDt);if(presentationDt>0)updateReward(presentationDt);updateProjectiles(game,combatDt);updatePersistent(game);updateWarnings(game);}
+ function reset(){time=serial=bladeClock=0;clearBlade();for(const r of enemyTrails)clearEnemyTrail(r);seen.clear();seenOrder.length=0;sparks.length=lodged.length=confetti.length=pendingConfetti.length=0;confettiMesh.count=0;lastGame=null;reward.active=false;reward.age=0;reward.revealed=false;reward.g.visible=false;for(const r of rigs){r.active=false;r.g.visible=false;}for(const m of [sparkMesh,...projectileMeshes,stars])m.count=0;mirror.visible=chargeMark.visible=guardMark.visible=false;for(const m of warningPool){m.visible=false;m.unblockableMark.visible=false;}}
  function camera(){return{x:0,y:0,flash:0,zoom:1};}
  return{emit,update,reset,camera};
 }

@@ -76,7 +76,7 @@
   // Reticle selection and projectile collision share this exact ellipsoid.
   // Profiles: body centre height, vertical radius, horizontal radius. Weapons,
   // the seer's halo/satellites and the beast's narrow tail are not body targets.
-  const SHOT_VOLUMES={guard:[1.18,1.2,.65],slime:[1.18,1.2,.65],archer:[1.3,1.25,.6],bat:[1,.5,.7],swimmer:[.65,.6,.75],ironWarden:[2.4,2.15,1.15],tideBeast:[1.75,1.55,2.65],starSeer:[2.85,1.8,1.05]};
+  const SHOT_VOLUMES={guard:[1.18,1.2,.65],slime:[1.18,1.2,.65],archer:[1.3,1.25,.6],bat:[1,.5,.7],swimmer:[.65,.6,.75],ironWarden:[2.4,2.15,1.15],sweetheart:[1.85,1.75,1.05],tideBeast:[1.75,1.55,2.65],starSeer:[2.85,1.8,1.05]};
   function projectileTargetPoint(e){return{x:e.x,y:finite(e.y)+(SHOT_VOLUMES[e.bossKind||e.type]?.[0]??.9),z:e.z};}
   function projectileTargetContact(a,b,e,padding=0){
     const profile=SHOT_VOLUMES[e.bossKind||e.type]||[.9,.58,Math.max(.58,e.radius||0)],rx=profile[2]+padding,ry=profile[1]+padding;
@@ -141,11 +141,11 @@
   function wildsData(){const area=globalThis.HatWilds;if(!area)throw new Error('HatWilds must load before HatGame.createGame.');return area;}
   function refreshWildsObstacles(s){
     s.obstacles=wildsData().obstacles.filter(o=>o.id!=='shortcut-barrier'||!s.wilds.shortcutOpen).map(normalizeRect);
-    if(!s.wilds.bossDefeated){const y=Math.min(groundHeight(-2.9,-13.225),groundHeight(2.9,-13.225),groundHeight(-2.9,-12.775),groundHeight(2.9,-12.775));s.obstacles.push({id:'boss-mist',x:0,y,z:-13,w:5.8,d:.45,height:groundHeight(0,-13)+5.8-y,kind:'fog',walkable:false});}
+    if(!s.wilds.bossDefeated||s.wilds.finalEntered&&!s.wilds.finalDefeated){const y=Math.min(groundHeight(-2.9,-13.225),groundHeight(2.9,-13.225),groundHeight(-2.9,-12.775),groundHeight(2.9,-12.775));s.obstacles.push({id:'boss-mist',x:0,y,z:-13,w:5.8,d:.45,height:groundHeight(0,-13)+5.8-y,kind:'fog',walkable:false});}
   }
   function populateWilds(s){
     s.enemies=wildsData().enemies.map((source,i)=>{
-      const boss=source.type==='boss',at=point(source),defeated=boss&&s.wilds.bossDefeated;
+      const boss=source.type==='boss',at=point(source),defeated=boss&&(source.bossKind==='sweetheart'?s.wilds.finalDefeated:s.wilds.bossDefeated);
       return{...source,...at,radius:boss?.95:.43,maxHp:source.hp,hp:defeated?0:source.hp,vx:0,vz:0,facing:-1,dirX:0,dirZ:1,
         state:defeated?'dead':boss?'dormant':'idle',spawned:true,spawnRemaining:0,spawnDuration:.7,spawnAnchor:point(at),
         timer:0,attackTimer:0,moveId:null,strikeId:0,strikeElapsed:0,strikeDuration:0,strikeContact:0,contactReached:false,hitFlash:0,dead:defeated,cooldown:.7+(i%3)*.22,attackDone:false,hitStun:0,stunResistance:0,deadAge:defeated?20:0,
@@ -159,7 +159,7 @@
   function createGame(){
     const area=wildsData(),s={mode:'wilds',levelIndex:0,level:{...area,index:0,theme:'wilds',length:56},roomId:'wilds',room:{id:'wilds',kind:'wilds',name:area.name,cleared:false},
       worldLength:56,bounds:{...area.bounds},obstacles:[],ponds:[],lane:{minZ:area.bounds.minZ,maxZ:area.bounds.maxZ},platforms:[],waterZones:[],
-      wilds:{bossEntered:false,bossDefeated:false,shortcutOpen:false,deathDrop:null,upgradeHealth:0,upgradeWeapon:0},wildsRevision:0,camp:{...area.camp},interaction:null,
+      wilds:{bossEntered:false,bossDefeated:false,finalEntered:false,finalDefeated:false,shortcutOpen:false,deathDrop:null,upgradeHealth:0,upgradeWeapon:0},wildsRevision:0,camp:{...area.camp},interaction:null,
       chests:area.chests.map(c=>({...c,opened:false,revealing:false})),pickups:[],arena:{active:false,cleared:false,enemyIds:[]},checkpoint:true,bossActive:false,exitUnlocked:false,
       encounter:{index:0,number:0,total:1,phase:'exploration',remaining:0,activeCount:0,enemiesRemaining:area.enemies.length,cleared:0},
       levelKills:0,requiredKills:area.enemies.length,projectiles:[],areaEffects:[],pendingChest:null,treasure:null,upgradeChoices:[],reactionQueue:[],reactionCounts:{},hitKeys:{},cleanupAt:0,
@@ -185,7 +185,7 @@
     clearBufferedInputs(s);cancelGuard(s);cancelBow(s);cancelAttack(p);
   }
   function resetAtCamp(s){
-    const p=s.player;clearTransient(s);s.wilds.bossEntered=false;refreshWildsObstacles(s);populateWilds(s);
+    const p=s.player;clearTransient(s);s.wilds.bossEntered=false;s.wilds.finalEntered=false;refreshWildsObstacles(s);populateWilds(s);
     Object.assign(p,safePosition(s,wildsData().spawn));p.y=p.groundY=supportHeight(s,p.x,p.z,p.y,p.radius);p.grounded=true;p.vx=p.vy=p.vz=0;p.hp=p.maxHp;p.potions=3;p.stamina=p.maxStamina;p.staminaDelay=0;p.sprinting=false;p.sprintExhausted=false;p.jumpAttack=false;p.airSpeed=6.4;
     p.hurtTimer=0;p.landTimer=0;p.combo=0;p.comboWindow=0;p.iFrames={hurtUntil:s.time+.8,dashUntil:0};p.dash.charges=2;p.dash.rechargeRemaining=0;p.dash.nextAllowedAt=0;p.dash.from=point(p);p.dash.previous=point(p);p.previousPosition=point(p);
     s.skillCooldowns.bolt=0;s.skillCooldowns.nova=0;s.catCooldown=0;s.catMotion=makeCatMotion(p,s);s.pendingChest=null;s.treasure=null;s.upgradeChoices=[];s.comboHits=0;s.comboTimeout=0;s.hitStop=0;
@@ -228,7 +228,7 @@
     // One small pause for an entire action, including all targets and side arrows.
     // Reactions never own a pause, and a second impact cannot add to a pending one.
     const id=ctx?.rootActionId;if(!id||ctx.origin!=='primary'||s.hitStopActions[id]!==undefined)return;
-    s.hitStopActions[id]=s.time;s.hitStop=Math.max(s.hitStop,Math.min(.065,duration));
+    s.hitStopActions[id]=s.time;s.hitStop=Math.max(s.hitStop,Math.min(.085,duration));
   }
   function interruptEnemy(s,e,duration,reason,ctx){
     if(e.comboActive)emit(s,'enemyAttackCancel',e,{targetId:e.id,targetType:e.type,attackKind:e.attackKind,reason},ctx);
@@ -253,15 +253,16 @@
       // attacks cannot keep resetting the enemy's commitment indefinitely.
       if(blade&&e.stunResistance<=EPS&&(!boss||ctx.attackCounter)){
         interruptEnemy(s,e,ctx.attackCounter?.28:heavy?.24:.095,'stagger',ctx);e.stunResistance=heavy?1.15:.72;
-        if(!boss)moveDisc(s,e,dir.x*(heavy?.3:.1),dir.z*(heavy?.3:.1),false,e.type==='bat'?'bat':e.type==='swimmer'?'swimmer':'ground');
+        if(!boss)moveDisc(s,e,dir.x*(heavy?.58:.24),dir.z*(heavy?.58:.24),false,e.type==='bat'?'bat':e.type==='swimmer'?'swimmer':'ground');
       }
-      if(blade)requestHitStop(s,ctx,heavy?.065:.035);
+      if(blade)requestHitStop(s,ctx,ctx.attackCounter?.085:heavy?.08:.048);
     }
     emit(s,'hit',contactPoint,{contactPoint,value:before-e.hp,damage:before-e.hp,targetId:e.id,targetType:e.type,combo:ctx.combo||0,heavy:ctx.origin==='primary'&&heavy,attackCounter:!!ctx.attackCounter,dirX:dir.x,dirZ:dir.z,direction:dir.x<0?-1:1,hitStopClass:ctx.hitStopClass},ctx);
     if(e.hp<=0){
       e.y=e.groundY=supportHeight(s,e.x,e.z,e.y,e.radius);e.baseY=e.y;e.dead=true;e.deadAge=0;e.state='dead';e.comboActive=false;e.comboMoves=null;clearEnemyStrike(e);e.timer=0;e.statuses={};s.kills++;s.levelKills++;s.coins+=finite(e.reward,boss?160:18);
       emit(s,'kill',at,{value:1,targetId:e.id,targetType:e.type,heavy:boss,dirX:dir.x,dirZ:dir.z,direction:dir.x<0?-1:1},ctx);
-      if(boss){s.wilds.bossDefeated=true;s.wilds.bossEntered=false;s.bossActive=false;s.arena.active=false;s.arena.cleared=true;s.exitUnlocked=true;s.room.cleared=true;refreshWildsObstacles(s);s.wildsRevision++;emit(s,'bossDefeated',e,{targetId:e.id,reward:e.reward},ctx);emit(s,'exitUnlocked',s.level.exit);}
+      if(boss&&e.bossKind==='sweetheart'){s.wilds.finalDefeated=true;s.wilds.finalEntered=false;s.bossActive=false;s.arena.active=false;s.arena.cleared=true;refreshWildsObstacles(s);s.wildsRevision++;emit(s,'finalDefeated',e,{targetId:e.id,reward:e.reward,heavy:true},ctx);}
+      else if(boss){s.wilds.bossDefeated=true;s.wilds.bossEntered=false;s.bossActive=false;s.arena.active=false;s.arena.cleared=true;s.exitUnlocked=true;s.room.cleared=true;refreshWildsObstacles(s);s.wildsRevision++;emit(s,'bossDefeated',e,{targetId:e.id,reward:e.reward},ctx);emit(s,'exitUnlocked',s.level.exit);}
       return{appliedDamage:before,killed:true,survived:false};
     }
     if(boss&&!e.phase2&&e.hp<=e.maxHp/2){e.phase2=true;emit(s,'bossPhase',e,{value:2,targetId:e.id,targetType:'boss'},ctx);}
@@ -308,7 +309,7 @@
   }
   function nearby(s,at,radius,requireSight=true){return s.enemies.filter(e=>activeEnemy(e)&&dist(centre(e),at)<=radius&&(!requireSight||visible(s,at,centre(e)))).sort((a,b)=>dist(centre(a),at)-dist(centre(b),at)||a.id.localeCompare(b.id));}
   function projectile(s,kind,from,to,speed,damage,ctx,options={}){
-    const len=Math.max(EPS,dist(from,to)),shot={id:'p-'+(++s.projectileSerial),kind,owner:ctx.owner||'player',...point(from),prevX:from.x,prevY:from.y,prevZ:from.z,vx:(to.x-from.x)/len*speed,vy:(to.y-from.y)/len*speed,vz:(to.z-from.z)/len*speed,speed,damage,radius:kind==='bossOrb'?.25:.15,life:3,ctx,sourceId:ctx.sourceId||'player',hits:[],pathLeg:0,...options};
+    const len=Math.max(EPS,dist(from,to)),shot={id:'p-'+(++s.projectileSerial),kind,owner:ctx.owner||'player',...point(from),prevX:from.x,prevY:from.y,prevZ:from.z,vx:(to.x-from.x)/len*speed,vy:(to.y-from.y)/len*speed,vz:(to.z-from.z)/len*speed,speed,damage,radius:kind==='bossOrb'||kind==='cake'?.28:.15,life:3,ctx,sourceId:ctx.sourceId||'player',hits:[],pathLeg:0,...options};
     s.projectiles.push(shot);emit(s,'projectile',from,{value:damage,damage,kind,owner:shot.owner,projectileId:shot.id,sourceId:shot.sourceId,vx:shot.vx,vy:shot.vy,vz:shot.vz,dirX:shot.vx/speed,dirY:shot.vy/speed,dirZ:shot.vz/speed},ctx);return shot;
   }
   function projectileWorldContact(s,a,b,r){
@@ -603,7 +604,7 @@
     const chest=s.chests.find(c=>chestAvailable(s,c));if(chest){s.interaction={kind:'chest',id:chest.id,label:'开启'+chest.name};return;}
     if(!s.wilds.shortcutOpen&&near(a.shortcut.lever,2)){s.interaction={kind:'shortcut',label:'拉动机关 · 开启近路'};return;}
     if(!s.wilds.bossEntered&&!s.wilds.bossDefeated&&p.z>-12.9&&near(a.bossGate,2.3)){s.interaction={kind:'bossGate',label:'穿过雾门 · 挑战守誓者'};return;}
-    if(s.wilds.bossDefeated&&near(a.exit,2)){s.interaction={kind:'exit',label:'触碰余晖祭坛'};return;}
+    if(s.wilds.bossDefeated&&!s.wilds.finalEntered&&near(a.exit,2)){s.interaction=s.wilds.finalDefeated?{kind:'exit',label:'吹灭生日蜡烛'}:{kind:'final',label:'触碰余晖祭坛'};return;}
   }
   function enterBoss(s){
     const a=wildsData(),p=s.player;clearTransient(s);Object.assign(p,point(a.bossGate.spawn));p.groundY=p.y;p.grounded=true;p.vx=p.vy=p.vz=0;p.previousPosition=point(p);p.iFrames.hurtUntil=s.time+.7;
@@ -613,6 +614,14 @@
     const boss=s.enemies.find(e=>e.type==='boss');boss.state='idle';boss.aggro=true;boss.cooldown=1.4;s.wildsRevision++;
     emit(s,'bossAwake',boss,{targetId:boss.id,name:boss.bossName});
   }
+  // Birthday finale: the altar wakes one last, much gentler boss in the same sealed arena.
+  function enterFinal(s){
+    const a=wildsData(),p=s.player;clearTransient(s);Object.assign(p,point(a.bossGate.spawn));p.groundY=p.y;p.grounded=true;p.vx=p.vy=p.vz=0;p.previousPosition=point(p);p.iFrames.hurtUntil=s.time+1.2;
+    s.catMotion=makeCatMotion(p,s);s.wilds.finalEntered=true;s.bossActive=true;s.arena.active=true;s.arena.cleared=false;s.arena.enemyIds=['sweetheart'];s.interaction=null;refreshWildsObstacles(s);
+    for(const e of s.enemies)if(e.type!=='boss'&&!e.dead){Object.assign(e,point(e.spawnAnchor));e.groundY=groundHeight(e.x,e.z);e.baseY=e.groundY+finite(e.hoverHeight);e.y=e.baseY;e.hp=e.maxHp;e.state='idle';e.aggro=false;e.returning=false;e.comboActive=false;e.comboMoves=null;clearEnemyStrike(e);e.path=[];e.statuses={};e.hitStun=0;e.timer=0;e.cooldown=1;}
+    const boss=s.enemies.find(e=>e.bossKind==='sweetheart');Object.assign(boss,point(boss.spawnAnchor));boss.hp=boss.maxHp;boss.phase2=false;boss.state='spawning';boss.spawnTimed=true;boss.spawnRemaining=boss.spawnDuration=1.35;boss.aggro=true;boss.cooldown=1.1;s.wildsRevision++;
+    emit(s,'bossAwake',boss,{targetId:boss.id,name:boss.bossName,bossKind:'sweetheart'});
+  }
   function explorationStep(s,input){
     refreshInteraction(s);const p=s.player,i=s.interaction;
     if(!input.interact||!i||!interactionReady(p))return;
@@ -621,6 +630,7 @@
     if(i.kind==='recover'){const drop=s.wilds.deathDrop;s.coins+=drop.coins;emit(s,'emberRecovered',drop,{value:drop.coins});s.wilds.deathDrop=null;}
     if(i.kind==='shortcut'){s.wilds.shortcutOpen=true;refreshWildsObstacles(s);s.wildsRevision++;emit(s,'shortcutOpen',wildsData().shortcut.lever);}
     if(i.kind==='bossGate'){enterBoss(s);return;}
+    if(i.kind==='final'){enterFinal(s);return;}
     if(i.kind==='exit'){s.phase='won';p.vx=p.vz=0;s.hitStop=0;clearTransient(s);emit(s,'win',p,{value:0});}
     refreshInteraction(s);
   }

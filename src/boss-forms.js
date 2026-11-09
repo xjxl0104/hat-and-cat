@@ -77,7 +77,7 @@ function create({THREE:T,scene,camera}){
  function update(game,dt){
   time+=Math.max(0,dt||0);cameraInverse.copy(camera.quaternion).invert();
   for(const e of game.enemies){
-   if(e.type!=='boss'||root.HatPixelWarden&&(e.bossKind||'ironWarden')==='ironWarden')continue;const kind=e.bossKind||kinds[game.levelIndex||0];let r=rigs.get(e.id);
+   if(e.type!=='boss'||e.bossKind==='sweetheart'||root.HatPixelWarden&&(e.bossKind||'ironWarden')==='ironWarden')continue;const kind=e.bossKind||kinds[game.levelIndex||0];let r=rigs.get(e.id);
    if(r&&r.kind!==kind){disposeRig(r);rigs.delete(e.id);r=null;}
    if(!r){r=make(kind);rigs.set(e.id,r);}
    const age=e.deadAge||0,alive=!e.dead||age<.38,spawn=e.state==='spawning'?Math.max(0,Math.min(1,1-e.spawnRemaining/Math.max(.01,e.spawnDuration))):1;

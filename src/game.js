@@ -46,7 +46,7 @@ function showCamp(){hidePanels();$('camp-panel').hidden=false;const info=G.getCa
  $('leave-camp').focus();
 }
 function campUpgrade(kind){if(game.phase!=='rest')return;game.events=[];if(G.upgradeAtCamp(game,kind)){showCamp();hud();notify(kind==='health'?'营火温养了你的生命。':'剑锋已磨砺。',1.8);}}
-function showResult(){const phase=game.phase,copy={paused:['THE FIRE CAN WAIT','暂停旅途','留意体力与敌人的收招空档。猫会在这里等你。'],dead:['THE EMBERS REMAIN','余火未熄','携带的余烬留在倒下的地方。再次倒下会覆盖旧的遗失余烬。'],won:['AN OATH, AT LAST, RELEASED','守誓终归余晖','礼拜堂重归宁静。草帽、猫与你，一起走到了这片荒庭的尽头。']}[phase];
+function showResult(){const phase=game.phase,copy={paused:['THE FIRE CAN WAIT','暂停旅途','留意体力与敌人的收招空档。猫会在这里等你。'],dead:['THE EMBERS REMAIN','余火未熄','携带的余烬留在倒下的地方。再次倒下会覆盖旧的遗失余烬。'],won:game.wilds.finalDefeated?['HAPPY BIRTHDAY','生日快乐！','守誓者归于宁静，最终 Boss 也乖乖认输了。\n草帽、猫和他一起陪你吹灭蜡烛——愿新的一岁，每天都有余晖与甜。']:['AN OATH, AT LAST, RELEASED','守誓终归余晖','礼拜堂重归宁静。草帽、猫与你，一起走到了这片荒庭的尽头。']}[phase];
  $('result').hidden=false;$('result-eyebrow').textContent=copy[0];$('result-title').textContent=copy[1];$('result-copy').textContent=copy[2];$('resume').hidden=phase!=='paused';$('respawn').hidden=phase!=='dead';$('result-stats').innerHTML='<span><b>'+game.kills+'</b>击败敌人</span><span><b>'+game.perks.length+'</b>携带遗物</span><span><b>'+Math.floor(game.time/60)+':'+String(Math.floor(game.time%60)).padStart(2,'0')+'</b>旅途时间</span>';
  (phase==='dead'?$('respawn'):phase==='paused'?$('resume'):$('restart')).focus();
 }
@@ -55,7 +55,7 @@ function showUpgrade(){const choices=$('upgrade-choices');choices.replaceChildre
 }
 function choose(index){if(game.phase!=='upgrade')return;const id=game.upgradeChoices[index];if(!id)return;G.chooseUpgrade(game,id);audio.pause(false);effects(game.events);clearInput();syncPhase();controls.capture();}
 function damageNumber(e){if(numbers.length>=6)numbers.shift().el.remove();const el=document.createElement('span');el.className='damage-number'+(e.heavy?' heavy':'');el.textContent=Math.round(e.value||e.damage||0);$('damage-numbers').append(el);numbers.push({el,x:e.x,y:e.y+.6,z:e.z,age:0,life:.58,drift:(Math.random()-.5)*.4});}
-function effects(events){const aliases={dashStart:'dodge',mirrorSlash:'swing',guardReflect:'projectileHit',starBurst:'projectileHit',crescentLaunch:'bolt',bossAwake:'arenaStart',bossDefeated:'arenaClear',emberRecovered:'pickup',shortcutOpen:'checkpoint',rest:'checkpoint',drinkStart:'ui'};
+function effects(events){const aliases={dashStart:'dodge',mirrorSlash:'swing',guardReflect:'projectileHit',starBurst:'projectileHit',crescentLaunch:'bolt',bossAwake:'arenaStart',finalDefeated:'arenaClear',bossDefeated:'arenaClear',emberRecovered:'pickup',shortcutOpen:'checkpoint',rest:'checkpoint',drinkStart:'ui'};
  for(const e of events){fx.emit(e,game);actors.emit(e);audio.effect({...e,type:aliases[e.type]||e.type,intensity:e.origin==='reaction'?.4:1,pan:Math.max(-.8,Math.min(.8,((e.x??game.player.x)-game.player.x)/14))});
   if(e.type==='hit'&&e.origin!=='reaction'&&(e.heavy||e.value>=35))damageNumber(e);
   if(e.type==='upgrade')notify('获得遗物「'+G.PERKS[e.perkId].name+'」',2.8);
@@ -64,7 +64,8 @@ function effects(events){const aliases={dashStart:'dodge',mirrorSlash:'swing',gu
   if(e.type==='drinkCancel')notify('饮用被打断',1.2);
   if(e.type==='shortcutOpen')notify('旧巡礼小径 · 近路已开启',3);
   if(e.type==='emberRecovered')notify('找回 '+e.value+' 余烬',2);
-  if(e.type==='bossAwake')notify('余晖守誓者\n剑招可以精准格挡，红色十字招式请闪避或跳开。',3.3);
+  if(e.type==='bossAwake')notify(e.bossKind==='sweetheart'?'等一下！最后的 Boss 从天而降……\n棒棒糖可以格挡反击 · 红叉招式请跳开或闪避':'余晖守誓者\n剑招可以精准格挡，红色十字招式请闪避或跳开。',3.6);
+  if(e.type==='finalDefeated')notify('他认输啦！\n去祭坛吹灭生日蜡烛吧。',4);
   if(e.type==='bossDefeated')notify('誓约已尽\n走向礼拜堂尽头的余光。',4);
   if(e.type==='weaponSwap')notify(game.player.weaponMode==='bow'?'短弓 · 按住左键或右键蓄箭，松开发射':'剑盾 · 左键斩击，右键举盾',1.5);
   if(e.type==='weaponSwapQueued')notify('当前动作结束后切换武器',1.25);
@@ -81,16 +82,16 @@ function defenseHUD(){
  $('combat-state').textContent=text;$('combat-state').hidden=game.phase!=='play'||!text;$('combat-state').className=broken?'broken':counter?'counter':perfect?'perfect':'';
  $('stamina-bar').classList.toggle('guarding',!!p.guardActive);$('stamina-bar').classList.toggle('broken',broken);
 }
-function hud(elapsed=0){const p=game.player,boss=game.enemies.find(e=>e.type==='boss');$('health-label').textContent=Math.ceil(p.hp)+' / '+p.maxHp;$('health-bar').style.width=(p.hp/p.maxHp*100)+'%';$('stamina-bar').style.width=(p.stamina/p.maxStamina*100)+'%';$('stamina-label').textContent=Math.ceil(p.stamina);$('movement-state').textContent=p.guardBreakTimer>0?'破防':p.guardActive?'举盾':p.healTimer>0?'正在饮用':!p.grounded?'腾空':p.dash.active?'闪避':p.sprinting?'疾跑':p.stamina<20?'体力不足':'步行';$('potions').textContent=p.potions;$('coins').textContent=game.coins;$('flask-status').textContent=p.healTimer>0?'饮用中 · '+p.healTimer.toFixed(1)+'s':p.potions?'手动饮用 · 受击会打断':'已耗尽 · 回营火补充';
+function hud(elapsed=0){const p=game.player,boss=game.enemies.find(e=>e.type==='boss'&&!e.dead&&e.state!=='dormant')||game.enemies.find(e=>e.type==='boss');$('health-label').textContent=Math.ceil(p.hp)+' / '+p.maxHp;$('health-bar').style.width=(p.hp/p.maxHp*100)+'%';$('stamina-bar').style.width=(p.stamina/p.maxStamina*100)+'%';$('stamina-label').textContent=Math.ceil(p.stamina);$('movement-state').textContent=p.guardBreakTimer>0?'破防':p.guardActive?'举盾':p.healTimer>0?'正在饮用':!p.grounded?'腾空':p.dash.active?'闪避':p.sprinting?'疾跑':p.stamina<20?'体力不足':'步行';$('potions').textContent=p.potions;$('coins').textContent=game.coins;$('flask-status').textContent=p.healTimer>0?'饮用中 · '+p.healTimer.toFixed(1)+'s':p.potions?'手动饮用 · 受击会打断':'已耗尽 · 回营火补充';
  const ability=(id,timer,label)=>{$(id+'-cd').textContent=timer>.01?timer.toFixed(1)+'s':label;$(id+'-ability').classList.toggle('cooling',timer>.01);};ability('cat',game.catCooldown,'指向破绽');$('dash-cd').textContent=p.stamina<25?'体力不足':'25 体力';$('dash-ability').classList.toggle('cooling',p.stamina<25||p.dash.active);
- $('boss-hud').hidden=!game.bossActive||!boss||boss.dead;$('boss-name').textContent='余晖守誓者';$('boss-action').textContent=boss&&!boss.dead?(boss.state==='windup'?(boss.attackName||'正在蓄势')+(boss.comboTotal>1?' · '+((boss.comboIndex||0)+1)+' / '+boss.comboTotal:''):boss.state==='comboGap'?'连招尚未结束':boss.exposed&&boss.exposedUntil>game.time?'收招空档 · 可以反击':''):'';$('boss-bar').style.width=(boss?boss.hp/boss.maxHp*100:0)+'%';$('interact-prompt').hidden=!game.interaction||game.phase!=='play';$('interact-label').textContent=game.interaction?.label||'';
+ $('boss-hud').hidden=!game.bossActive||!boss||boss.dead;$('boss-name').textContent=boss?.bossName||'余晖守誓者';$('boss-hud').classList.toggle('sweet',boss?.bossKind==='sweetheart');$('boss-action').textContent=boss&&!boss.dead?(boss.state==='windup'?(boss.attackName||'正在蓄势')+(boss.comboTotal>1?' · '+((boss.comboIndex||0)+1)+' / '+boss.comboTotal:''):boss.state==='comboGap'?'连招尚未结束':boss.exposed&&boss.exposedUntil>game.time?'收招空档 · 可以反击':''):'';$('boss-bar').style.width=(boss?boss.hp/boss.maxHp*100:0)+'%';$('interact-prompt').hidden=!game.interaction||game.phase!=='play';$('interact-label').textContent=game.interaction?.label||'';
  const key=game.perks.join(',');if(key!==boonKey){boonKey=key;$('boon-list').replaceChildren();for(const id of game.perks){const info=G.getPerkInfo(game,id),chip=document.createElement('span');chip.textContent=info.name;chip.className=info.family;chip.title=info.description;$('boon-list').append(chip);}}$('boon-list').hidden=!game.perks.length;
  const yaw=shoulder.getState().yaw,headings=['北 N','东北 NE','东 E','东南 SE','南 S','西南 SW','西 W','西北 NW'];$('compass-heading').textContent=headings[(Math.round(yaw/(Math.PI/4))+8)%8];routeUI.update(game,elapsed);$('music').title=audio.getState().title;$('record').textContent=recorder.isRecording()?'停止录制':'录制 20s';
 }
 function draw(combatDt,revealDt,view){const visualDt=Math.max(combatDt,revealDt);clock+=visualDt;world.update(game,visualDt,clock);shoulder.update(view,combatDt);inverseCamera.copy(camera.quaternion).invert();actors.update(view,game.impactFrozen?0:combatDt);fx.update(view,combatDt,revealDt);defenseHUD();
  for(let i=numbers.length-1;i>=0;i--){const n=numbers[i];n.age+=combatDt;if(n.age>=n.life){n.el.remove();numbers.splice(i,1);continue;}numberPosition.set(n.x+n.drift*n.age,n.y+n.age*.9,n.z);numberLocal.copy(numberPosition).sub(camera.position).applyQuaternion(inverseCamera);numberPosition.project(camera);n.el.hidden=numberLocal.z>=0||Math.abs(numberPosition.x)>1||Math.abs(numberPosition.y)>1;n.el.style.left=(numberPosition.x*.5+.5)*100+'%';n.el.style.top=(-numberPosition.y*.5+.5)*100+'%';n.el.style.opacity=Math.min(.85,(n.life-n.age)*5);}
  if(combatDt>0&&!game.impactFrozen){const p=view.player;stepTime+=combatDt;if(p.grounded&&Math.hypot(p.vx,p.vz)>.1&&!p.dash.active&&stepTime>(p.sprinting?.23:.34)){stepTime=0;audio.effect({type:'step',intensity:.5});}}
- shoulderHUD.update(view,shoulder.aim(view));renderer.render(scene,camera);recorder.render();
+ shoulderHUD.update(view,shoulder.aim(view));const inspect=window.__hat?.inspect;if(inspect){camera.position.set(inspect[0],inspect[1],inspect[2]);camera.lookAt(inspect[3],inspect[4],inspect[5]);}renderer.render(scene,camera);recorder.render();
 }
 function frame(now){
  requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;if(document.hidden)return;
@@ -104,5 +105,7 @@ function frame(now){
 $('start').onclick=start;$('pause').onclick=togglePause;$('resume').onclick=resume;$('restart').onclick=restart;$('respawn').onclick=respawn;$('leave-camp').onclick=leaveCamp;$('upgrade-health').onclick=()=>campUpgrade('health');$('upgrade-weapon').onclick=()=>campUpgrade('weapon');
 let musicEnabled=true,sfxEnabled=true;$('music').onclick=()=>{musicEnabled=!musicEnabled;audio.unlock();audio.setMusic(musicEnabled);$('music').textContent=musicEnabled?'♫ 8-bit 开':'♫ 8-bit 关';$('music').setAttribute('aria-pressed',String(musicEnabled));};$('sound').onclick=()=>{sfxEnabled=!sfxEnabled;audio.unlock();audio.setSfx(sfxEnabled);$('sound').textContent=sfxEnabled?'音效 开':'音效 关';$('sound').setAttribute('aria-pressed',String(sfxEnabled));};
 $('record').onclick=async()=>{if(loading||!['ready','play','paused'].includes(game.phase))return;if(recorder.isRecording()){await recorder.stop();return;}if(game.phase==='ready')start();if(game.phase==='paused')resume();await recorder.start(20);canvas.focus();};$('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen?.();else $('game-shell').requestFullscreen?.().catch(()=>{});};$('credits-button').onclick=()=>$('credits').showModal();$('credits-close').onclick=()=>$('credits').close();canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();if(game.phase==='play')togglePause();notify('画面连接中断，请重新打开文件。',20);});
+// Local inspection only: ?debug exposes live state for manual QA.
+if(/[?&]debug\b/.test(location.search))window.__hat={get game(){return game;},G,fx,camera,shoulder,actors,scene,renderer};
 loadArea();requestAnimationFrame(frame);
 })();

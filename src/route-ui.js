@@ -2,7 +2,7 @@
 function create(){
  const $=id=>document.getElementById(id),canvas=$('room-map'),ctx=canvas.getContext('2d');let arrivalTimer=0;
  function zone(s){const p=s.player;if(p.z<-13&&Math.abs(p.x)<10)return '失誓礼拜堂';if(p.x<-12&&p.z<-4)return '旧巡礼小径';if(p.x>9&&p.z<11)return '半埋遗迹';if(p.z>14)return '营火坡地';return '残石古道';}
- function objective(s){if(s.wilds.bossDefeated)return '守誓已终 · 走向礼拜堂尽头的余光';if(s.wilds.bossEntered)return '避开连招 · 低位横扫可跳过 · 收招时反击';if(s.wilds.deathDrop)return '取回遗失的余烬，或先回营火休整';if(s.wilds.shortcutOpen)return '近路已开启 · 前往礼拜堂挑战守誓者';if(s.player.z>10)return '循石路前行 · 东侧遗迹藏着旧日遗物';return '寻找近路与遗物 · 礼拜堂在北方';}
+ function objective(s){if(s.wilds.finalDefeated)return '他认输啦 · 去祭坛吹灭生日蜡烛';if(s.wilds.finalEntered)return '最终 Boss · 格挡棒棒糖再反击 · 红叉招式要跳开或闪避';if(s.wilds.bossDefeated)return '守誓已终 · 走向礼拜堂尽头的余光';if(s.wilds.bossEntered)return '避开连招 · 低位横扫可跳过 · 收招时反击';if(s.wilds.deathDrop)return '取回遗失的余烬，或先回营火休整';if(s.wilds.shortcutOpen)return '近路已开启 · 前往礼拜堂挑战守誓者';if(s.player.z>10)return '循石路前行 · 东侧遗迹藏着旧日遗物';return '寻找近路与遗物 · 礼拜堂在北方';}
  function update(s,dt=0){
   const w=canvas.width,h=canvas.height,b=s.bounds,X=x=>7+(x-b.minX)/(b.maxX-b.minX)*(w-14),Y=z=>7+(z-b.minZ)/(b.maxZ-b.minZ)*(h-14);ctx.clearRect(0,0,w,h);ctx.fillStyle='#202b22';ctx.fillRect(0,0,w,h);
   const terrain=root.HatTerrain,palette=['#24322d','#2e3b31','#3a4538','#47503e','#555b46','#656550','#72725b'];
@@ -12,7 +12,7 @@ function create(){
   ctx.fillStyle='#cdb275';ctx.fillRect(X(s.camp.x)-2,Y(s.camp.z)-2,4,4);
   for(const c of s.chests)if(!c.opened){ctx.strokeStyle='#b59b66';ctx.strokeRect(X(c.x)-2,Y(c.z)-2,4,4);}
   if(s.wilds.deathDrop){const d=s.wilds.deathDrop;ctx.fillStyle='#d7d396';ctx.fillRect(X(d.x)-2,Y(d.z)-2,4,4);}
-  for(const e of s.enemies){if(e.dead||e.spawned===false||Math.hypot(e.x-s.player.x,e.z-s.player.z)>10)continue;ctx.fillStyle=e.type==='boss'?'#cfa486':'#ac7760';ctx.fillRect(X(e.x)-1,Y(e.z)-1,2,2);}
+  for(const e of s.enemies){if(e.dead||e.spawned===false||e.bossKind==='sweetheart'&&e.state==='dormant'||Math.hypot(e.x-s.player.x,e.z-s.player.z)>10)continue;ctx.fillStyle=e.bossKind==='sweetheart'?'#ff8fb8':e.type==='boss'?'#ffb27a':'#ff7d6b';ctx.fillRect(X(e.x)-1,Y(e.z)-1,2,2);}
   const p=s.player,px=X(p.x),py=Y(p.z);ctx.strokeStyle='#e8dec0';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+(p.aimDirX||0)*6,py+(p.aimDirZ||-1)*6);ctx.stroke();ctx.fillStyle='#ede4c4';ctx.fillRect(px-1.5,py-1.5,3,3);
   $('route-room').textContent=zone(s);$('route-floor').textContent=s.wilds.shortcutOpen?'西侧近路 · 已开启':'西侧近路 · 尚未开启';$('objective-text').textContent=objective(s);
   arrivalTimer=Math.max(0,arrivalTimer-dt);$('room-arrival').classList.toggle('show',arrivalTimer>0&&s.phase==='play');

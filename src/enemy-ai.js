@@ -5,7 +5,7 @@
   root.HatEnemyAI=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-  const EPS=1e-6,TAU=Math.PI*2,RANGED=['arrow','water','bossOrb'];
+  const EPS=1e-6,TAU=Math.PI*2,RANGED=['arrow','water','bossOrb','cake'];
   const MOTION=['hop','dive','swoop','charge'],MAX_ENEMY_SHOTS=5;
   const BOSS_KINDS=['ironWarden','tideBeast','starSeer'];
 
@@ -36,7 +36,15 @@
     seerRelocate:{kind:'relocate',name:'星位转移',windup:1.15,range:1,shape:'circle',damage:0,harmless:true,gap:.55},
     seerFirst:{kind:'bossOrb',name:'星针 · 一',windup:1.04,range:14,width:.6,shape:'line',damage:12,speed:8,gap:.42},
     seerSecond:{kind:'bossOrb',name:'星针 · 二',windup:.86,range:14,width:.6,shape:'line',damage:12,speed:8,gap:.42},
-    seerThird:{kind:'bossOrb',name:'星针 · 三',windup:.86,range:14,width:.6,shape:'line',damage:14,speed:8}
+    seerThird:{kind:'bossOrb',name:'星针 · 三',windup:.86,range:14,width:.6,shape:'line',damage:14,speed:8},
+    // Birthday finale: long, readable warnings and soft damage. He is meant to be beaten.
+    sweetSweep:{kind:'slash',name:'爱心棒棒糖横扫 · 可格挡',windup:1.05,range:3.3,halfAngle:1.25,damage:11,gap:.5},
+    sweetBonk:{kind:'thrust',name:'棒棒糖敲头 · 侧闪',windup:1.1,range:3.5,width:1.1,shape:'line',damage:12,gap:.5,hitHeight:3},
+    sweetPopper:{kind:'stomp',name:'生日礼花 · 跳开',windup:1.2,range:3.1,shape:'circle',damage:11,jumpable:true,unblockable:true,parryable:false,gap:.55},
+    sweetHug:{kind:'charge',name:'抱抱冲锋 · 不可挡',windup:1.4,range:6.6,width:1.5,shape:'line',damage:13,motion:.72,gap:.6,hitHeight:2.8,unblockable:true,parryable:false},
+    sweetCakeA:{kind:'cake',name:'投喂蛋糕 · 一',windup:1,range:13,width:.62,shape:'line',damage:8,speed:7.2,gap:.42},
+    sweetCakeB:{kind:'cake',name:'投喂蛋糕 · 二',windup:.78,range:13,width:.62,shape:'line',damage:8,speed:7.2,gap:.42},
+    sweetCakeFan:{kind:'cake',name:'三层蛋糕雨',windup:1.25,range:12,halfAngle:.3,shape:'cone',damage:8,speed:6.6,angles:[-.3,0,.3]}
   };
 
   function create(H){
@@ -163,6 +171,8 @@
       const from=centre(e);
       if(e.type==='archer'){
         from.x+=finite(e.dirX,1)*.55;from.y=e.y+1.55;from.z+=finite(e.dirZ)*.55;
+      }else if(e.bossKind==='sweetheart'){
+        from.x+=finite(e.dirX,1)*.7;from.y=e.y+2.05;from.z+=finite(e.dirZ)*.7;
       }else if(e.type==='swimmer'){
         const pond=s.ponds.find(q=>q.id===e.waterZoneId)||s.ponds[0];if(pond)from.y=pond.surface+.6;
       }
@@ -367,6 +377,13 @@
       if(e.type==='swimmer')return n%3===2?beginCombo(s,e,['waterFan'],'三岔浪花',1.45):beginCombo(s,e,['waterFirst','waterSecond'],'双潮追射',1.25);
       if(e.type==='boss'){
         const kind=bossKind(s,e);
+        if(kind==='sweetheart'){
+          // Far: cakes or a hug. Near: lollipop sweep, bonk, or the party popper.
+          if(distance>4.4)return n%2?beginCombo(s,e,['sweetHug'].concat(e.phase2?['sweetSweep']:[]),'抱抱冲锋',1.9):beginCombo(s,e,e.phase2?['sweetCakeFan','sweetCakeB']:['sweetCakeA','sweetCakeB','sweetCakeA'],'生日投喂',1.8);
+          if(n%3===0)return beginCombo(s,e,e.phase2?['sweetSweep','sweetBonk']:['sweetSweep'],'棒棒糖连击',1.75);
+          if(n%3===1)return beginCombo(s,e,['sweetPopper'].concat(e.phase2?['sweetCakeFan']:[]),'生日礼花',1.85);
+          return beginCombo(s,e,['sweetBonk'],'爱心敲头',1.7);
+        }
         if(kind==='ironWarden'){
           if(n%3===0)return beginCombo(s,e,e.phase2?['wardenCharge','wardenReturn']:['wardenCharge'],'誓盾追击',1.75);
           if(n%3===1)return beginCombo(s,e,e.phase2?['wardenSweep','wardenReturn']:['wardenSweep'],'余晖低扫',1.65);
@@ -396,9 +413,11 @@
         if(distance<5.4&&sight&&e.cooldown<=EPS&&choosePattern(s,e,distance))return;
         if(distance>3||!sight){e.state='chase';steerEnemy(s,e,p,3.05,dt);}else e.state='idle';
       }else if(e.type==='boss'){
-        const kind=bossKind(s,e),reach=kind==='ironWarden'?7.1:13;
+        const kind=bossKind(s,e),reach=kind==='ironWarden'?7.1:kind==='sweetheart'?11:13;
         if(distance<reach&&sight&&e.cooldown<=EPS&&choosePattern(s,e,distance))return;
-        if(kind==='ironWarden'){
+        if(kind==='sweetheart'){
+          if(distance>2.9||!sight){e.state='chase';steerEnemy(s,e,p,e.phase2?2.35:2,dt);}else e.state='idle';
+        }else if(kind==='ironWarden'){
           if(distance>2.65||!sight){e.state='chase';steerEnemy(s,e,p,e.phase2?2.55:2.2,dt);}else e.state='idle';
         }else if(kind==='tideBeast'){
           if(distance>8||!sight){e.state='chase';steerEnemy(s,e,rangedFlankTarget(s,e),1.15,dt);}else e.state='idle';
@@ -416,6 +435,7 @@
     function step(s,dt){
       if(!Number.isFinite(dt)||dt<=0)return;
       for(const e of s.enemies){
+        if(e.state==='spawning'&&e.spawnTimed){e.spawnRemaining=Math.max(0,finite(e.spawnRemaining)-dt);if(e.spawnRemaining<=EPS){e.state='idle';e.spawnTimed=false;}continue;}
         if(!e.spawned||e.state==='spawning')continue;
         const old=point(e);
         for(const key of ['hitFlash','stunResistance','cooldown','repath','hitReactionTimer','parryStaggerTimer'])e[key]=Math.max(0,finite(e[key])-dt);
@@ -425,10 +445,10 @@
         const distance=groundDist(e,s.player),boss=e.type==='boss';
         if(s.mode==='wilds'){
           if(boss){
-            if(!s.wilds.bossEntered){e.state='dormant';e.aggro=false;continue;}
+            if(!(e.bossKind==='sweetheart'?s.wilds.finalEntered:s.wilds.bossEntered)){e.state='dormant';e.aggro=false;continue;}
             e.aggro=true;
           }else{
-            const lost=s.wilds.bossEntered||groundDist(s.player,s.camp)<5.8||groundDist(s.player,e.spawnAnchor)>finite(e.leash,12)||groundDist(e,e.spawnAnchor)>finite(e.leash,12)+.1;
+            const lost=s.wilds.bossEntered||s.wilds.finalEntered||groundDist(s.player,s.camp)<5.8||groundDist(s.player,e.spawnAnchor)>finite(e.leash,12)||groundDist(e,e.spawnAnchor)>finite(e.leash,12)+.1;
             if(e.returning||e.aggro&&lost){returnHome(s,e,dt);e.vx=(e.x-old.x)/dt;e.vz=(e.z-old.z)/dt;continue;}
             if(lost){e.state='idle';settleHeight(s,e,dt);continue;}
             const nearbyAggro=s.enemies.filter(n=>n!==e&&!n.dead&&n.aggro&&n.type!=='boss').length;

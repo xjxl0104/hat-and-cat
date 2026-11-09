@@ -40,7 +40,9 @@ root.HatWilds={
   {id:'ruin-keeper',type:'guard',x:12,z:-1,hp:120,aggroRadius:6.5,leash:11,reward:35},
   {id:'shortcut-guard',type:'guard',x:-16,z:-10,hp:105,aggroRadius:6,leash:10,reward:28},
   {id:'chapel-knight',type:'guard',x:-2,z:-8,hp:135,aggroRadius:6.2,leash:9,reward:40},
-  {id:'boss',type:'boss',bossKind:'ironWarden',bossName:'余晖守誓者',x:0,z:-25,hp:460,aggroRadius:0,leash:19,reward:160}
+  {id:'boss',type:'boss',bossKind:'ironWarden',bossName:'余晖守誓者',x:0,z:-25,hp:460,aggroRadius:0,leash:19,reward:160},
+  // Birthday finale, woken by the altar after the Warden. Modelled on the player's boyfriend.
+  {id:'sweetheart',type:'boss',bossKind:'sweetheart',bossName:'钰淞 · 生日最终 Boss',x:0,z:-24,hp:320,aggroRadius:0,leash:19,reward:99}
  ],
  landmarks:[{id:'camp',x:-19,z:19,name:'营火'},{id:'ruins',x:15,z:3,name:'断墙遗迹'},{id:'shortcut',x:-19,z:-5,name:'近路门'},{id:'chapel',x:0,z:-22,name:'暮钟礼拜堂'}]
 };
