@@ -8,7 +8,9 @@ const selected={
   // Birthday detail pass: ground cover, props and varied trees.
   'flower_purpleA','flower_redA','flower_yellowA','flower_purpleB','flower_redB','flower_yellowB','mushroom_redGroup','mushroom_tanGroup','mushroom_redTall',
   'rock_smallA','rock_smallC','rock_smallFlatA','stump_roundDetailed','stump_old','log','log_stack','plant_bushDetailed','plant_bushLarge','plant_flatTall','grass_leafs',
-  'tree_default','tree_fat_fall','tree_oak','tree_cone_fall','tree_pineRoundA','tree_small_fall','tent_detailedOpen','sign','pot_large','fence_simple','statue_head','statue_obelisk','crop_pumpkin','path_stoneCircle'],
+  'tree_default','tree_fat_fall','tree_oak','tree_cone_fall','tree_pineRoundA','tree_small_fall','tent_detailedOpen','sign','pot_large','fence_simple','statue_head','statue_obelisk','crop_pumpkin','path_stoneCircle',
+  // Chapter one, the firefly lakeside.
+  'bridge_wood','lily_large','lily_small','canoe','statue_ring','tent_smallOpen','tree_pineDefaultA','tree_thin_dark','tree_tall_dark','rock_tallB','stump_round','grass'],
  'fantasy-town-kit':['lantern','cart','stall-red','banner-red','fountain-round-detail','hedge','wall-broken','rock-wide','tree-crooked','fence-broken','windmill','wheel','stairs-stone']
 };
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');

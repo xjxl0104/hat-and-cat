@@ -141,7 +141,7 @@
   function wildsData(){const area=globalThis.HatWilds;if(!area)throw new Error('HatWilds must load before HatGame.createGame.');return area;}
   function refreshWildsObstacles(s){
     s.obstacles=wildsData().obstacles.filter(o=>o.id!=='shortcut-barrier'||!s.wilds.shortcutOpen).map(normalizeRect);
-    if(!s.wilds.bossDefeated||s.wilds.finalEntered&&!s.wilds.finalDefeated){const y=Math.min(groundHeight(-2.9,-13.225),groundHeight(2.9,-13.225),groundHeight(-2.9,-12.775),groundHeight(2.9,-12.775));s.obstacles.push({id:'boss-mist',x:0,y,z:-13,w:5.8,d:.45,height:groundHeight(0,-13)+5.8-y,kind:'fog',walkable:false});}
+    if(wildsData().bossGate&&(!s.wilds.bossDefeated||s.wilds.finalEntered&&!s.wilds.finalDefeated)){const y=Math.min(groundHeight(-2.9,-13.225),groundHeight(2.9,-13.225),groundHeight(-2.9,-12.775),groundHeight(2.9,-12.775));s.obstacles.push({id:'boss-mist',x:0,y,z:-13,w:5.8,d:.45,height:groundHeight(0,-13)+5.8-y,kind:'fog',walkable:false});}
   }
   function populateWilds(s){
     s.enemies=wildsData().enemies.map((source,i)=>{
@@ -636,9 +636,10 @@
     if(near(s.camp,2.5)){s.interaction={kind:'camp',label:'休息 · 恢复与强化'};return;}
     const drop=s.wilds.deathDrop;if(drop&&near(drop,1.8)){s.interaction={kind:'recover',label:'取回 '+drop.coins+' 余烬'};return;}
     const chest=s.chests.find(c=>chestAvailable(s,c));if(chest){s.interaction={kind:'chest',id:chest.id,label:'开启'+chest.name};return;}
-    if(!s.wilds.shortcutOpen&&near(a.shortcut.lever,2)){s.interaction={kind:'shortcut',label:'拉动机关 · 开启近路'};return;}
-    if(!s.wilds.bossEntered&&!s.wilds.bossDefeated&&p.z>-12.9&&near(a.bossGate,2.3)){s.interaction={kind:'bossGate',label:'穿过雾门 · 挑战守誓者'};return;}
-    if(s.wilds.bossDefeated&&!s.wilds.finalEntered&&near(a.exit,2)){s.interaction=s.wilds.finalDefeated?{kind:'exit',label:'吹灭生日蜡烛'}:{kind:'final',label:'触碰余晖祭坛'};return;}
+    if(a.portal&&near(a.portal,2.6)){s.interaction={kind:'portal',label:'穿过月光之门 · 前往暮丘遗迹'};return;}
+    if(a.shortcut&&!s.wilds.shortcutOpen&&near(a.shortcut.lever,2)){s.interaction={kind:'shortcut',label:'拉动机关 · 开启近路'};return;}
+    if(a.bossGate&&!s.wilds.bossEntered&&!s.wilds.bossDefeated&&p.z>-12.9&&near(a.bossGate,2.3)){s.interaction={kind:'bossGate',label:'穿过雾门 · 挑战守誓者'};return;}
+    if(a.exit&&s.wilds.bossDefeated&&!s.wilds.finalEntered&&near(a.exit,2)){s.interaction=s.wilds.finalDefeated?{kind:'exit',label:'吹灭生日蜡烛'}:{kind:'final',label:'触碰余晖祭坛'};return;}
   }
   function enterBoss(s){
     const a=wildsData(),p=s.player;clearTransient(s);Object.assign(p,point(a.bossGate.spawn));p.groundY=p.y;p.grounded=true;p.vx=p.vy=p.vz=0;p.previousPosition=point(p);p.iFrames.hurtUntil=s.time+.7;
@@ -667,6 +668,8 @@
     if(i.kind==='shortcut'){s.wilds.shortcutOpen=true;refreshWildsObstacles(s);s.wildsRevision++;emit(s,'shortcutOpen',wildsData().shortcut.lever);}
     if(i.kind==='bossGate'){enterBoss(s);return;}
     if(i.kind==='final'){enterFinal(s);return;}
+    // The game shell loads the next area; the engine only stops and announces it.
+    if(i.kind==='portal'){s.phase='travel';p.vx=p.vz=0;s.hitStop=0;clearTransient(s);emit(s,'portal',p,{to:wildsData().portal.to});return;}
     if(i.kind==='exit'){s.phase='won';p.vx=p.vz=0;s.hitStop=0;clearTransient(s);emit(s,'win',p,{value:0});}
     refreshInteraction(s);
   }

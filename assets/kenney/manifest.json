@@ -714,6 +714,162 @@
       "usedIn": "src/wilds-world.js"
     },
     {
+      "id": "nature-kit/bridge_wood",
+      "sourceObjSha256": "876a7836950740997d05733f39f0533359d890bd114015fc13a8c9d059beb4fd",
+      "sourceMtlSha256": "20207ce4b250313db94013354e2ad19402419c5cf33d699ff331a2a409f53b12",
+      "vertices": 660,
+      "triangles": 220,
+      "size": [
+        1.04,
+        0.4,
+        1.04
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/lily_large",
+      "sourceObjSha256": "1b563ce3cdbb40b33003bf258cdf9dbf10488d59facb9408035a2d32d04b5ebb",
+      "sourceMtlSha256": "5efdbae1f40eb57810041db6f1a223bbb568f9d6b96c744c3436d7619085c6eb",
+      "vertices": 258,
+      "triangles": 86,
+      "size": [
+        0.27186,
+        0.098,
+        0.31392
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/lily_small",
+      "sourceObjSha256": "83e2b671096789a2a0ed8857e8b496282e2ac30bd5d351e4118c71228511ee9e",
+      "sourceMtlSha256": "cbff78631489ebd9cd03c9edba3871fa395caba4b67d01157b8d0cd8a27a808f",
+      "vertices": 156,
+      "triangles": 52,
+      "size": [
+        0.18879,
+        0.04,
+        0.218
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/canoe",
+      "sourceObjSha256": "f99e74d6ad94ab12915c129b84c16e0693a37291dbcfd666bcc2df019c6b35bb",
+      "sourceMtlSha256": "a6d00e8d5b2be1a5919d48ff50c08328d4a9dd94493c1bcb90fdc07d0206e145",
+      "vertices": 600,
+      "triangles": 200,
+      "size": [
+        0.3,
+        0.1825,
+        1.15
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/statue_ring",
+      "sourceObjSha256": "895a35e3380013e7a39513bffa234ae7cb18eab6fbe158c9e217864bed538568",
+      "sourceMtlSha256": "3a2c5542d2e4325abb7fb038b8ff12ad5254ed4599ce0682438adb3b866bba97",
+      "vertices": 228,
+      "triangles": 76,
+      "size": [
+        0.6,
+        0.79641,
+        0.4
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/tent_smallOpen",
+      "sourceObjSha256": "a6e4219773a8fa4d70200585bd83b3374ac3044d65b7f3d6c2ffdf9f3e5b7c79",
+      "sourceMtlSha256": "6058436f8a167167faca263523c51ed353bdaf85179caf165ce897c50068c228",
+      "vertices": 672,
+      "triangles": 224,
+      "size": [
+        0.5476,
+        0.56113,
+        0.6664
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/tree_pineDefaultA",
+      "sourceObjSha256": "42a96a38bde77458cedf73345bf83b9954b30164be76fe5f8839c7fed914fbc4",
+      "sourceMtlSha256": "11864f91d4bb9e14218a467dfb0146fd0ea5c75776519d28d4c4d67a06ce8413",
+      "vertices": 690,
+      "triangles": 230,
+      "size": [
+        0.53196,
+        1.54584,
+        0.53196
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/tree_thin_dark",
+      "sourceObjSha256": "6b70aaeab945161be5f0d8595e9af0dec6eefd03bc883c4d798743d65fdc3f3c",
+      "sourceMtlSha256": "11864f91d4bb9e14218a467dfb0146fd0ea5c75776519d28d4c4d67a06ce8413",
+      "vertices": 1368,
+      "triangles": 456,
+      "size": [
+        0.68044,
+        1.4903,
+        0.61652
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/tree_tall_dark",
+      "sourceObjSha256": "74151c5800587ba362023ac3a7aba94faeccddf5ed4ddf40e2acd9e84012a93c",
+      "sourceMtlSha256": "11864f91d4bb9e14218a467dfb0146fd0ea5c75776519d28d4c4d67a06ce8413",
+      "vertices": 216,
+      "triangles": 72,
+      "size": [
+        0.39958,
+        1.68772,
+        0.4614
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/rock_tallB",
+      "sourceObjSha256": "990a5f9641a350369bd1f8477476c3152fd4867db48bde91612958f8fd6e39cf",
+      "sourceMtlSha256": "db75535695bc97d26e50a03f55306f04938b123f0fc3622cac4ac15e5ef27ab8",
+      "vertices": 516,
+      "triangles": 172,
+      "size": [
+        0.76479,
+        0.88378,
+        0.77004
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/stump_round",
+      "sourceObjSha256": "996de53306caafd5dcb236b4d57ab3e4415d00a9053309a726773f3f2952c82d",
+      "sourceMtlSha256": "0da11a6ffeafc7ba144a51e856e10e1143bd4e94aa99a69a2eea30239e58a7d5",
+      "vertices": 168,
+      "triangles": 56,
+      "size": [
+        0.3213,
+        0.2065,
+        0.371
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/grass",
+      "sourceObjSha256": "a444b815fa29d2278e3fcac03ef79e52d7232a845f65dce2443075d2b294c74e",
+      "sourceMtlSha256": "b186368ad09ddb6673f90f63c45ecac3f793b36fe14f96bd62e6d44922e7e874",
+      "vertices": 396,
+      "triangles": 132,
+      "size": [
+        0.38107,
+        0.254,
+        0.39218
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
       "id": "fantasy-town-kit/lantern",
       "sourceObjSha256": "16c1e904fee1868757c2c80938fea161cc8904240f5f68dde988e17ddd9a033c",
       "sourceMtlSha256": "45a6736aa344a0c7e286b9c43c6a48f25b6a2f78d8c5949e430c3b4a93b4e060",
@@ -883,5 +1039,5 @@
       "usedIn": "src/wilds-world.js"
     }
   ],
-  "generatedSha256": "8bb7a99ff0a40d5af815ef699fdc704963c120c37d4360671e53e1871d59ca7c"
+  "generatedSha256": "dcbad360cad53a0f4a2add30fa32f06c6ca688381b6c9fa041b89cef891be85c"
 }

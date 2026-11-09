@@ -36,11 +36,19 @@ function togglePause(){if(loading)return;if(game.phase==='rest'){leaveCamp();ret
 function resume(){if(loading||game.phase!=='paused')return;game.phase=resumePhase;audio.unlock();clearInput();syncPhase();if(game.phase==='play')controls.capture();}
 function resetPresentation(resetCamera=false){actors.reset(game);fx.reset();magicFx.reset();impactCamera.reset();renderState.reset(game);for(const n of numbers)n.el.remove();numbers.length=0;world.update(game,0,clock);scene.updateMatrixWorld(true);if(resetCamera)shoulder.reset(game);revision=game.wildsRevision;}
 function syncRevision(){if(revision===game.wildsRevision)return;const teleport=game.events.some(e=>['rest','respawn','bossAwake'].includes(e.type));resetPresentation(teleport);}
-async function loadArea(){const ticket=++loadTicket;loading=true;clearInput();$('loading').hidden=false;$('loading-label').textContent='正在走进暮丘遗迹…';
- try{await Promise.all([world.load(game),spritesReady]);if(ticket!==loadTicket)return;if(spriteError)throw Error('角色图像未能载入');const theme=world.theme(0);sunlight.color.set(theme.key);ambient.color.set(theme.ambient);resetPresentation(true);clock=0;loading=false;$('loading').hidden=true;last=performance.now();lastPhase='';boonKey='';syncPhase();audio.setLevel(0);hud();}
+async function loadArea(){const ticket=++loadTicket;loading=true;clearInput();$('loading').hidden=false;$('loading-label').textContent='正在走进'+(window.HatWilds?.name||'荒庭')+'…';
+ try{await Promise.all([world.load(game),spritesReady]);if(ticket!==loadTicket)return;if(spriteError)throw Error('角色图像未能载入');const theme=world.theme(0);sunlight.color.set(theme.key);ambient.color.set(theme.ambient);ambient.groundColor.set(theme.ground||'#6a4636');sunlight.intensity=theme.keyIntensity??2.7;ambient.intensity=theme.ambientIntensity??.95;renderer.toneMappingExposure=theme.exposure??1.1;sunlight.position.set(...(theme.keyPosition||[-27,38,17]));rimlight.color.set(theme.rimColor||'#8fa8ff');rimlight.intensity=theme.rimIntensity??.85;resetPresentation(true);clock=0;loading=false;$('loading').hidden=true;last=performance.now();lastPhase='';boonKey='';syncPhase();audio.setLevel(0);hud();}
  catch(error){if(ticket!==loadTicket)return;$('loading').hidden=true;$('unsupported').hidden=false;$('unsupported').textContent='场景载入失败：'+error.message+'。请重新打开完整 HTML 文件。';}
 }
-async function restart(){if(loading)return;audio.pause(true);controls.release();game=G.createGame();game.phase='play';clearInput();controls.capture();await loadArea();audio.unlock();routeUI.arrive(game);}
+// Chapter change: keep what the player earned, then load the next area fresh.
+async function travel(to){
+ if(loading)return;const old=game,p=old.player;window.HatAreas.use(to);game=G.createGame();
+ Object.assign(game,{coins:old.coins,perks:old.perks.slice(),boonCount:old.boonCount,kills:old.kills,time:old.time});
+ Object.assign(game.wilds,{upgradeHealth:old.wilds.upgradeHealth,upgradeWeapon:old.wilds.upgradeWeapon});
+ Object.assign(game.player,{maxHp:p.maxHp,hp:p.maxHp,damageBonus:p.damageBonus,potions:Math.max(3,p.potions)});
+ game.phase='play';clearInput();await loadArea();audio.unlock();controls.capture();routeUI.arrive(game);notify('第二章 · 暮丘遗迹\n礼拜堂里还有人在等你',3.5);
+}
+async function restart(){if(loading)return;audio.pause(true);controls.release();window.HatAreas.use(window.HatAreas.first);game=G.createGame();game.phase='play';clearInput();controls.capture();await loadArea();audio.unlock();routeUI.arrive(game);}
 function respawn(){if(loading||game.phase!=='dead')return;game.events=[];G.respawn(game);clearInput();syncRevision();audio.unlock();syncPhase();effects(game.events);controls.capture();notify(game.wilds.deathDrop?'余烬留在倒下之处。取回它，再继续前行。':'在营火醒来。猫还在身边。',3.2);}
 function leaveCamp(){if(game.phase!=='rest')return;game.events=[];G.leaveRest(game);clearInput();audio.unlock();syncPhase();effects(game.events);controls.capture();}
 function showCamp(){hidePanels();$('camp-panel').hidden=false;const info=G.getCampInfo(game);$('camp-coins').textContent=game.coins;
@@ -58,7 +66,7 @@ function showUpgrade(){const choices=$('upgrade-choices');choices.replaceChildre
 }
 function choose(index){if(game.phase!=='upgrade')return;const id=game.upgradeChoices[index];if(!id)return;G.chooseUpgrade(game,id);audio.pause(false);effects(game.events);clearInput();syncPhase();controls.capture();}
 function damageNumber(e){if(numbers.length>=8)numbers.shift().el.remove();const el=document.createElement('span');el.className='damage-number'+(e.heavy?' heavy':'')+(e.attackCounter?' counter':'')+(e.type==='hurt'?' hurt':'');el.textContent=Math.round(e.value||e.damage||0);$('damage-numbers').append(el);numbers.push({el,x:e.x,y:e.y+.6,z:e.z,age:0,life:.58,drift:(Math.random()-.5)*.4});}
-function effects(events){const aliases={dashStart:'dodge',mirrorSlash:'swing',guardReflect:'projectileHit',starBurst:'projectileHit',crescentLaunch:'bolt',bossAwake:'arenaStart',finalDefeated:'arenaClear',autoAssist:'heal',bossDefeated:'arenaClear',emberRecovered:'pickup',shortcutOpen:'checkpoint',rest:'checkpoint',drinkStart:'ui'};
+function effects(events){const aliases={dashStart:'dodge',mirrorSlash:'swing',guardReflect:'projectileHit',starBurst:'projectileHit',crescentLaunch:'bolt',bossAwake:'arenaStart',finalDefeated:'arenaClear',portal:'checkpoint',autoAssist:'heal',bossDefeated:'arenaClear',emberRecovered:'pickup',shortcutOpen:'checkpoint',rest:'checkpoint',drinkStart:'ui'};
  for(const e of events){fx.emit(e,game);magicFx.emit(e);impactCamera.emit(e);actors.emit(e);audio.effect({...e,type:aliases[e.type]||e.type,intensity:e.origin==='reaction'?.4:1,pan:Math.max(-.8,Math.min(.8,((e.x??game.player.x)-game.player.x)/14))});
   if((e.type==='hit'||e.type==='hurt')&&e.origin!=='reaction'&&(e.value||e.damage)>0)damageNumber(e);
   if(e.type==='hurt'){const v=$('hurt-vignette');v.classList.remove('on');void v.offsetWidth;v.classList.add('on');}
@@ -66,6 +74,7 @@ function effects(events){const aliases={dashStart:'dodge',mirrorSlash:'swing',gu
   if(e.type==='treasureOpen'){noticeTime=0;$('notice').classList.remove('show');}
   if(e.type==='heal')notify('恢复 '+e.value+' 点生命',1.3);
   if(e.type==='drinkCancel')notify('饮用被打断',1.2);
+  if(e.type==='portal')setTimeout(()=>travel(e.to),450);
   if(e.type==='shortcutOpen')notify('旧巡礼小径 · 近路已开启',3);
   if(e.type==='emberRecovered')notify('找回 '+e.value+' 余烬',2);
   if(e.type==='bossAwake'){shoulder.reset(game);}

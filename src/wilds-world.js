@@ -7,7 +7,7 @@ function create({THREE:T,scene}){
  const palette={sky:'#2a2c5c',fog:'#d99a86',ambient:'#a9b6ff',key:'#ffcf8f',accent:'#f2b864',stone:'#8a8494',dark:'#3d3a52',brass:'#d4a85a',leaf:'#e0a040'};
  const materials=new Set(),geometries=new Set(),textures=new Set(),batches=new Map(),artBatches=new Map(),artGeometry=new Map(),patches=new Map();
  const chestModels=new Map(),solidQueries=new Map(),overhangQueries=[],occluders=[],cameraOccluders=[];
- let data=null,m=null,unit=null,queryMaterial=null,solidKey='',gate=null,lever=null,camp=null,mist=null,altar=null,deathDrop=null,skyMat=null,glowTex=null,cake=null;
+ let data=null,m=null,unit=null,queryMaterial=null,solidKey='',gate=null,lever=null,camp=null,mist=null,altar=null,deathDrop=null,skyMat=null,glowTex=null,cake=null,gateRing=null;
  const flickers=[],glows=[];
  const finite=(n,f=0)=>Number.isFinite(n)?n:f,H=(x,z)=>root.HatTerrain.heightAt(x,z);
  const noise=(x,z,s=0)=>{const n=Math.sin(x*127.1+z*311.7+s*74.7)*43758.5453;return n-Math.floor(n);};
@@ -70,12 +70,14 @@ function create({THREE:T,scene}){
   group.traverse(o=>{if(o.isInstancedMesh)o.dispose();});group.clear();queryGroup.clear();
   for(const g of geometries)g.dispose();for(const mat of materials)mat.dispose();for(const tex of textures)tex.dispose();
   geometries.clear();materials.clear();textures.clear();batches.clear();artBatches.clear();artGeometry.clear();patches.clear();chestModels.clear();solidQueries.clear();
-  overhangQueries.length=occluders.length=cameraOccluders.length=0;flickers.length=glows.length=0;solidKey='';data=m=unit=queryMaterial=gate=lever=camp=mist=altar=deathDrop=skyMat=glowTex=cake=null;
+  overhangQueries.length=occluders.length=cameraOccluders.length=0;flickers.length=glows.length=0;solidKey='';data=m=unit=queryMaterial=gate=lever=camp=mist=altar=deathDrop=skyMat=glowTex=cake=gateRing=null;
  }
+ function theme(){return {...palette,...(data?.theme||{})};}
  function makePalette(){
   const colors={earth:'#5b6a3c',soil:'#7a6448',grass:'#7c9a44',grassDark:'#5a7a3a',grassLight:'#9fb85a',straw:'#d2b45f',leaf:'#e39a3c',leafLight:'#f4c25a',leafShadow:'#b06a2e',stone:'#8a8494',stoneLight:'#aaa3b6',stoneDark:'#5a5568',mortar:'#3a3447',path:'#b39f80',pathLight:'#d0bb94',pathDark:'#8c7b65',bark:'#5e4434',barkLight:'#86634a',wood:'#7a5a42',iron:'#3c4152',gold:'#e0b45e',goldDark:'#a7803f',cloth:'#9a4a50',ash:'#423c3c',horizon:'#9a7c88',mountain:'#7a6888',mountainNear:'#5e5470',stem:'#5f8a3a',petalPink:'#ff8fb3',petalYellow:'#ffd84d',petalWhite:'#fff2e2',petalLilac:'#b99cff',capRed:'#e0483f',stalk:'#f2e6cf',cakeSponge:'#fff1e2',cakeCream:'#ff9cc0',plate:'#f4efe6'};
   const out={};for(const [name,color] of Object.entries(colors)){out[name]=material(color);out[name].name=name;}
   for(const [name,color] of Object.entries({flame:'#ffa63d',flameCore:'#fff0b0',glint:'#ffe08a',mist:'#f0d9b0',rune:'#ffd27a',lamp:'#ffd98a',cherry:'#ff3a5a',cloudLit:'#ffc1a0',cloudShade:'#c98a9a',ridgeFar:'#c98597',ridgeMid:'#8e6189',ridgeNear:'#5a4672'})){out[name]=material(color,true);out[name].name=name;}
+  for(const [name,color] of Object.entries(data?.theme?.colors||{}))out[name]?.color.set(color);
   out.art=material('#ffffff',false,{vertexColors:true});out.art.name='Muted Kenney vertex color';return out;
  }
  function queryBox(id,x,y,z,w,h,d,cameraOnly=false){
@@ -89,11 +91,12 @@ function create({THREE:T,scene}){
   overhangQueries.push(queryBox('Camera | stone / canopy', (minX+maxX)/2,(minY+maxY)/2,(minZ+maxZ)/2,maxX-minX,maxY-minY,maxZ-minZ,true));
  }
  function sky(){
-  skyMat=new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,uniforms:{top:{value:new T.Color('#141a45')},upper:{value:new T.Color('#3d3678')},mid:{value:new T.Color('#a25a8c')},low:{value:new T.Color('#f2806b')},horizon:{value:new T.Color('#ffc27a')},sunDir:{value:new T.Vector3(-77,35,76).normalize()},time:{value:0}},vertexShader:'varying vec3 vSky; void main(){vSky=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'uniform vec3 top; uniform vec3 upper; uniform vec3 mid; uniform vec3 low; uniform vec3 horizon; uniform vec3 sunDir; uniform float time; varying vec3 vSky; float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);} void main(){vec3 n=normalize(vSky); float h=clamp(n.y,0.0,1.0); float band=floor(h*30.0)/30.0; vec3 c=mix(horizon,low,smoothstep(0.0,0.1,band)); c=mix(c,mid,smoothstep(0.08,0.26,band)); c=mix(c,upper,smoothstep(0.24,0.5,band)); c=mix(c,top,smoothstep(0.46,0.92,band)); float s=max(dot(n,sunDir),0.0); c+=vec3(1.0,0.66,0.38)*floor((pow(s,5.0)*0.5+pow(s,48.0)*0.7)*9.0)/9.0; if(n.y<0.0)c=mix(horizon,vec3(0.55,0.36,0.42),clamp(-n.y*4.0,0.0,1.0)); vec2 g=floor(vec2(atan(n.z,n.x)*96.0,n.y*96.0)); float r=hash(g); c+=vec3(1.0,0.94,0.82)*step(0.9963,r)*smoothstep(0.3,0.62,n.y)*(0.5+0.5*sin(time*2.3+r*80.0)); gl_FragColor=vec4(c,1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'});materials.add(skyMat);
+  const P=theme(),stops=P.skyStops||['#141a45','#3d3678','#a25a8c','#f2806b','#ffc27a'],sunDir=new T.Vector3(...(P.sunDir||[-77,35,76])).normalize(),sunAt=sunDir.clone().multiplyScalar(112.5);
+  skyMat=new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,uniforms:{top:{value:new T.Color(stops[0])},upper:{value:new T.Color(stops[1])},mid:{value:new T.Color(stops[2])},low:{value:new T.Color(stops[3])},horizon:{value:new T.Color(stops[4])},sunDir:{value:sunDir.clone()},time:{value:0},sunTint:{value:new T.Vector3(...(P.sunTint||[1,.66,.38]))},ground:{value:new T.Vector3(...(P.skyGround||[.55,.36,.42]))},starFrom:{value:P.starFrom??.3},starCut:{value:P.starCut??.9963}},vertexShader:'varying vec3 vSky; void main(){vSky=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'uniform vec3 top; uniform vec3 upper; uniform vec3 mid; uniform vec3 low; uniform vec3 horizon; uniform vec3 sunDir; uniform float time; uniform vec3 sunTint; uniform vec3 ground; uniform float starFrom; uniform float starCut; varying vec3 vSky; float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);} void main(){vec3 n=normalize(vSky); float h=clamp(n.y,0.0,1.0); float band=floor(h*30.0)/30.0; vec3 c=mix(horizon,low,smoothstep(0.0,0.1,band)); c=mix(c,mid,smoothstep(0.08,0.26,band)); c=mix(c,upper,smoothstep(0.24,0.5,band)); c=mix(c,top,smoothstep(0.46,0.92,band)); float s=max(dot(n,sunDir),0.0); c+=sunTint*floor((pow(s,5.0)*0.5+pow(s,48.0)*0.7)*9.0)/9.0; if(n.y<0.0)c=mix(horizon,ground,clamp(-n.y*4.0,0.0,1.0)); vec2 g=floor(vec2(atan(n.z,n.x)*96.0,n.y*96.0)); float r=hash(g); c+=vec3(1.0,0.94,0.82)*step(starCut,r)*smoothstep(starFrom,starFrom+0.32,n.y)*(0.5+0.5*sin(time*2.3+r*80.0)); gl_FragColor=vec4(c,1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'});materials.add(skyMat);
   // Radius plus the furthest playable camera offset stays inside the 180-unit
   // far plane. A larger fixed dome would clip when walking to an area corner.
   const dome=mesh(geometry(new T.SphereGeometry(112,32,20)),skyMat);dome.name='Stepped golden-hour sky';dome.renderOrder=-10;
-  const sun=mesh(geometry(new T.CircleGeometry(5.4,14)),material('#fff3cf',true,{fog:false}),-77,35,76);sun.name='Low autumn sun';sun.lookAt(0,4,0);glow(-76,35,75,34,'#ffb070',.55,false);
+  const sun=mesh(geometry(new T.CircleGeometry(P.sunSize||5.4,14)),material(P.sunDisc||'#fff3cf',true,{fog:false}),sunAt.x,sunAt.y,sunAt.z);sun.name=data.id==='firefly-lake'?'Full moon':'Low autumn sun';sun.lookAt(0,4,0);glow(sunAt.x*.99,sunAt.y*.99,sunAt.z*.99,34,P.sunGlow||'#ffb070',.55,false);
   // Sunset-lit cloud bands: warm undersides catch the low sun.
   for(const p of [[-69,31,-87,28,2.4,8],[-42,34,-94,23,1.6,7],[13,27,-103,34,2,7],[38,30,-100,30,2,6],[76,28,-83,25,1.6,7],[-91,25,12,20,1.5,8],[-48,40,98,37,1.6,8],[35,33,111,32,1.5,8]]){stamp(m.cloudShade,...p);stamp(m.cloudLit,p[0],p[1]-p[4]*.45,p[2],p[3]*.82,p[4]*.45,p[5]*.9);}
  }
@@ -156,8 +159,9 @@ function create({THREE:T,scene}){
  }
  function clearGrass(x,z){
   if(Math.hypot(x-data.camp.x,z-data.camp.z)<3.8)return false;
-  if(x>-10.8&&x<10.8&&z<-12.5)return false;
-  if(routeDistance(x,z,route)<2.2||routeDistance(x,z,sideRoute)<1.65||routeDistance(x,z,shortcutRoute)<1.15)return false;
+  if(data.id==='firefly-lake'){if(H(x,z)<data.waterLevel+.25||routeDistance(x,z,data.route)<2||Math.hypot(x,z-data.portal.z)<3.2||x>3.6&&x<10.4&&Math.abs(z+6)<4.5)return false;}
+  else{if(x>-10.8&&x<10.8&&z<-12.5)return false;
+  if(routeDistance(x,z,route)<2.2||routeDistance(x,z,sideRoute)<1.65||routeDistance(x,z,shortcutRoute)<1.15)return false;}
   if(data.obstacles.some(o=>Math.abs(x-o.x)<o.w/2+.45&&Math.abs(z-o.z)<o.d/2+.45))return false;
   return true;
  }
@@ -216,7 +220,7 @@ function create({THREE:T,scene}){
  }
  function obstacleScenery(){
   for(const o of data.obstacles){
-   if(o.kind==='gate')continue;
+   if(o.kind==='gate'||o.kind==='water')continue;
    if(o.kind==='prop'){prop(o.model,o.x,o.z,o.height,o.rot||0);continue;}
    if(o.kind==='tree'){tree(o.x,o.z,o.height,o.w,false,finite(o.y));continue;}
    if(o.kind==='cart'){cart(o);continue;}
@@ -250,6 +254,7 @@ function create({THREE:T,scene}){
    else if(pick<4)prop('nature-kit/mushroom_redGroup',xx,zz,.42,r);else if(pick<5)prop('nature-kit/mushroom_tanGroup',xx,zz,.4,r);
    else if(pick<6)prop('nature-kit/plant_bushDetailed',xx,zz,.62,r);else if(pick<7)prop('nature-kit/grass_leafs',xx,zz,.4,r);else prop('nature-kit/plant_flatTall',xx,zz,.55,r);
   }
+  if(data.id!=='golden-wake'){borderForest(b,true);return;}
   // The traveller's camp: tent, firewood, a seat and a signpost toward the road.
   prop('nature-kit/log',-21.4,21.6,.42,1.25);prop('nature-kit/stump_roundDetailed',-16.8,21.4,.48);prop('nature-kit/pot_large',-22.2,17.2,.5,.4);
   prop('nature-kit/sign',-15.6,15.2,1.2,-.75);for(const [x,z,r] of [[-26.3,22],[-25.8,21.2],[-22.5,25.2]])prop('nature-kit/crop_pumpkin',x,z,.38,r);
@@ -260,15 +265,56 @@ function create({THREE:T,scene}){
   // Banners on the chapel facade and hedges framing its door.
   const front=H(0,-12.4);for(const x of [-8.6,-4.2,4.2,8.6])art('fantasy-town-kit/banner-red',x,front+2.2,-12.42,.06,2.5,1.15,Math.PI/2,'native');
   for(const side of [-1,1])for(const z of [-6.5,-9])prop('fantasy-town-kit/hedge',side*5.3,z,.55,0,H(side*5.3,z)-.03);
-  // Border forest: mixed species just outside the walkable bounds.
-  const trees=['nature-kit/tree_default','nature-kit/tree_oak','nature-kit/tree_fat_fall','nature-kit/tree_cone_fall','nature-kit/tree_pineRoundA','nature-kit/tree_small_fall','fantasy-town-kit/tree-crooked'];
-  const ring=[];for(let x=b.minX-1;x<=b.maxX+1;x+=2.7){ring.push([x,b.maxZ,0,1]);if(x<-11||x>11)ring.push([x,b.minZ,0,-1]);}
+  borderForest(b,false);
+ }
+ // Border forest: mixed species just outside the walkable bounds.
+ function borderForest(b,night){
+  const trees=night?['nature-kit/tree_pineDefaultA','nature-kit/tree_tall_dark','nature-kit/tree_thin_dark','nature-kit/tree_pineRoundA','nature-kit/tree_pineTallA_detailed','nature-kit/tree_default']:['nature-kit/tree_default','nature-kit/tree_oak','nature-kit/tree_fat_fall','nature-kit/tree_cone_fall','nature-kit/tree_pineRoundA','nature-kit/tree_small_fall','fantasy-town-kit/tree-crooked'];
+  const ring=[];for(let x=b.minX-1;x<=b.maxX+1;x+=2.7){ring.push([x,b.maxZ,0,1]);if(night||x<-11||x>11)ring.push([x,b.minZ,0,-1]);}
   for(let z=b.minZ;z<=b.maxZ;z+=2.7){ring.push([b.minX,z,-1,0]);ring.push([b.maxX,z,1,0]);}
   for(const [bx,bz,ox,oz] of ring)for(let k=0;k<2;k++){
    const n=noise(bx+k*7,bz,81),off=1.6+k*3.4+n*2.2,x=bx+ox*off+(oz?(n-.5)*2:0),z=bz+oz*off+(ox?(n-.5)*2:0);
-   if(n<.18)continue;prop(trees[Math.floor(noise(bz,bx+k,82)*trees.length)],x,z,4.2+n*4+k*1.5,n*7,H(x,z)-.1);
+   if(n<.18)continue;const gy=H(x,z);if(night&&gy<data.waterLevel)continue;prop(trees[Math.floor(noise(bz,bx+k,82)*trees.length)],x,z,4.2+n*4+k*1.5,n*7,H(x,z)-.1);
    if(n>.6)prop('nature-kit/plant_bushLarge',x-ox*1.2+.8,z-oz*1.2,.9,n*5);
   }
+ }
+ // Chapter one: water, bridge, reeds, lily pads, a north-bank pinewood and the moon gate.
+ function lakeWorld(){
+  const b=data.bounds,wl=data.waterLevel;path(data.route,3);
+  for(let x=b.minX+.8;x<b.maxX-.6;x+=1.7)for(let z=b.minZ+1;z<b.maxZ-.6;z+=1.9){
+   const n=noise(x,z,3),xx=x+(n-.5)*.7,zz=z+(noise(z,x,9)-.5)*.7;if(n<.4||!clearGrass(xx,zz))continue;
+   art('nature-kit/grass_large',xx,H(xx,zz)-.015,zz,.46+n*.28,.22+n*.3,.4+n*.3,n*6.28);
+  }
+  const petals=[m.petalLilac,m.petalWhite,m.petalPink];
+  for(let x=b.minX+1.1;x<b.maxX-.8;x+=1.3)for(let z=b.minZ+1.3;z<b.maxZ-.8;z+=1.3){
+   const n=noise(x,z,41),cluster=noise(Math.floor(x/6),Math.floor(z/6),43);if(n<.66||cluster<.4)continue;
+   const xx=x+(noise(z,x,44)-.5)*.8,zz=z+(noise(x,z,45)-.5)*.8;if(!clearGrass(xx,zz))continue;const y=H(xx,zz),hgt=.08+n*.09;
+   stamp(m.stem,xx,y+hgt/2,zz,.035,hgt,.035);stamp(petals[Math.floor(noise(Math.floor(x/4),Math.floor(z/4),46)*3)],xx,y+hgt+.03,zz,.1,.06,.1);
+  }
+  // Moonlit water: stepped ripples and twinkling glints, under the scene fog.
+  const water=new T.ShaderMaterial({transparent:true,fog:true,uniforms:T.UniformsUtils.merge([T.UniformsLib.fog,{time:{value:0}}]),
+   vertexShader:'#include <fog_pars_vertex>\nvarying vec3 vW;void main(){vW=(modelMatrix*vec4(position,1.0)).xyz;vec4 mvPosition=modelViewMatrix*vec4(position,1.0);gl_Position=projectionMatrix*mvPosition;\n#include <fog_vertex>\n}',
+   fragmentShader:'#include <fog_pars_fragment>\nuniform float time;varying vec3 vW;float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}void main(){vec2 p=floor(vW.xz*2.0)/2.0;float r=sin(p.x*.9+time*.8)*sin(p.y*1.1-time*.6);vec3 c=mix(vec3(.02,.05,.15),vec3(.05,.12,.28),floor((r*.5+.5)*4.0)/4.0);float g=hash(floor(vW.xz*3.0)+floor(time*1.5));c+=vec3(.6,.7,.9)*step(.995,g);float moon=smoothstep(3.5,0.0,abs(vW.x*.79+vW.z*.45+4.0));c+=vec3(.3,.36,.5)*moon*step(.75,hash(floor(vW.xz*4.0)+floor(time*3.0)));gl_FragColor=vec4(c,.94);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n#include <fog_fragment>\n}'});
+  materials.add(water);const sheet=mesh(geometry(new T.PlaneGeometry(b.maxX-b.minX+40,b.maxZ-b.minZ+40)),water,0,wl,(b.minZ+b.maxZ)/2);sheet.rotation.x=-Math.PI/2;sheet.name='Moonlit lake';sheet.renderOrder=2;group.userData.waterMat=water;
+  // Lily pads, reeds and a canoe pulled up on the south shore.
+  for(let i=0;i<70;i++){const x=-24+noise(i,1,51)*30,z=-11+noise(i,2,52)*20;if(H(x,z)>wl-.5)continue;const big=noise(i,3,53)>.45;art(big?'nature-kit/lily_large':'nature-kit/lily_small',x,wl+.01,z,big?.9:.6,.1,big?1:.7,i,'native');if(noise(i,4,54)>.8)glow(x,wl+.3,z,.9,'#ffd6f0',.5);}
+  for(let x=b.minX+.5;x<b.maxX;x+=.9)for(let z=b.minZ+.5;z<b.maxZ;z+=.9){const y=H(x,z);if(y<wl-.25||y>wl+.45||noise(x,z,55)<.55)continue;art('nature-kit/grass',x,y-.05,z,.5,.55+noise(z,x,56)*.4,.5,x*z,'native');}
+  prop('nature-kit/canoe',-9.5,7.6,.5,.9);prop('nature-kit/stump_round',.8,24.4,.45);prop('nature-kit/log',-4.6,20.2,.42,.3);prop('nature-kit/pot_large',-.3,25.6,.5);prop('nature-kit/sign',4.6,17,1.2,-.4);
+  // The wooden bridge spans the river where the bank stays dry.
+  for(let z=-9.6;z<-2.2;z+=1.25)art('nature-kit/bridge_wood',7,H(7,z)-.05,z,1.3,.9,5.4,Math.PI/2,'native');
+  // North-bank pinewood, kept off the path, the river and the gate.
+  const pines=['nature-kit/tree_pineDefaultA','nature-kit/tree_tall_dark','nature-kit/tree_thin_dark','nature-kit/tree_pineTallA_detailed'];
+  for(let x=b.minX+1.5;x<b.maxX-1;x+=3.1)for(let z=b.minZ+1.5;z<-10;z+=3.1){const n=noise(x,z,57),xx=x+(n-.5)*1.6,zz=z+(noise(z,x,58)-.5)*1.6;if(n<.42||H(xx,zz)<wl+.3||routeDistance(xx,zz,data.route)<3.4||Math.hypot(xx,zz-data.portal.z)<5.5||data.chests.some(c=>Math.hypot(c.x-xx,c.z-zz)<2.5)||data.enemies.some(e=>Math.hypot(e.x-xx,e.z-zz)<2))continue;
+   prop(pines[Math.floor(noise(zz,xx,59)*pines.length)],xx,zz,4.2+n*3.5,n*6);}
+  for(const [x,z,h] of [[19,1,5],[24,-1,6],[-24,10,5.5],[-25,3,6],[22,24,5],[-14,25,4.5],[12,25,5]])prop('nature-kit/tree_pineRoundA',x,z,h,x);
+  // The moon gate: a standing stone ring holding a slow, shimmering disc.
+  const pg=data.portal,base=H(pg.x,pg.z-1);gateRing=localGroup('Moon gate',pg.x,base,pg.z-1);
+  art('nature-kit/statue_ring',pg.x,base-.05,pg.z-1,3.9,5.2,1.2,0,'native');prop('nature-kit/path_stoneCircle',pg.x,pg.z+.6,.06);
+  const disc=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide,uniforms:{time:{value:0}},vertexShader:'varying vec2 vU;void main(){vU=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+   fragmentShader:'uniform float time;varying vec2 vU;void main(){vec2 q=vU-.5;float r=length(q)*2.0,a=atan(q.y,q.x);float sw=sin(a*5.0+r*9.0-time*2.2)*.5+.5;float k=floor((1.0-r)*5.0+sw*1.5)/5.0;if(r>1.0)discard;vec3 c=mix(vec3(.45,.6,1.0),vec3(1.0,.85,.98),sw*(1.0-r));gl_FragColor=vec4(c,clamp(k,0.0,1.0)*.85);}'});
+  materials.add(disc);const d=mesh(geometry(new T.CircleGeometry(1.45,24)),disc,0,2.65,0,gateRing);gateRing.userData.disc=disc;d.name='Moon gate disc';
+  glow(pg.x,base+2.6,pg.z-1,5.5,'#9fc4ff',.55);lightAt(pg.x,base+2.6,pg.z-.2,'#a8c8ff',5,12,group,.06);
+  for(const [x,z] of [[-2.8,-23.5],[2.8,-23.5]])prop('nature-kit/statue_obelisk',x,z,2.2,.3);
  }
  function lantern(o){
   const y=finite(o.y),hx=o.x+(o.x<0?.34:-.34);
@@ -407,9 +453,9 @@ function create({THREE:T,scene}){
  function activeSolids(game){
   const wilds=game.wilds||{},engineOwns=Array.isArray(game.obstacles),items=[...(engineOwns?game.obstacles:data.obstacles)];
   // Defensive fallback also supports an initial state before engine sync.
-  if(!engineOwns&&!wilds.bossDefeated&&!items.some(o=>o.id==='boss-mist'))items.push({id:'boss-mist',x:0,y:H(0,-13),z:-13,w:5.8,d:.45,height:5.8,kind:'fog'});
+  if(!engineOwns&&data.bossGate&&!wilds.bossDefeated&&!items.some(o=>o.id==='boss-mist'))items.push({id:'boss-mist',x:0,y:H(0,-13),z:-13,w:5.8,d:.45,height:5.8,kind:'fog'});
   for(const door of game.doors||[])if(!door.open&&door.solid&&Number.isFinite(door.w)&&Number.isFinite(door.d)&&!items.some(o=>o.id===door.id))items.push(door);
-  return items.filter(o=>o.active!==false&&!o.disabled&&!(o.id===data.shortcut.id&&wilds.shortcutOpen)&&!(o.id==='boss-mist'&&wilds.bossDefeated&&!(wilds.finalEntered&&!wilds.finalDefeated)));
+  return items.filter(o=>o.active!==false&&!o.disabled&&!(data.shortcut&&o.id===data.shortcut.id&&wilds.shortcutOpen)&&!(o.id==='boss-mist'&&wilds.bossDefeated&&!(wilds.finalEntered&&!wilds.finalDefeated)));
  }
  function syncQueries(game){
   const items=activeSolids(game),key=items.map(o=>[o.id,o.x,o.z,o.y||0,o.w,o.d,o.height||o.h||1].join(',')).join('|')+'|'+!!game.wilds?.shortcutOpen;
@@ -426,8 +472,9 @@ function create({THREE:T,scene}){
  async function load(game){
   clear();data=root.HatWilds;if(!data||!root.HatTerrain||!root.HatArtAssets)throw new Error('HatTerrain, HatArtAssets and HatWilds must load before HatWildsWorld');
   unit=geometry(new T.BoxGeometry(1,1,1));queryMaterial=material('#ffffff',true,{side:T.DoubleSide});m=makePalette();
-  scene.background=new T.Color(palette.sky);scene.fog=new T.Fog(palette.fog,30,122);
-  sky();ridges();terrain();meadow();details();obstacleScenery();chapel();relicArch();skyline();campBuild();shortcutBuild();mistBuild();
+  const P=theme();scene.background=new T.Color(P.sky);scene.fog=new T.Fog(P.fog,P.fogNear||30,P.fogFar||122);
+  if(data.id==='firefly-lake'){sky();ridges();terrain();lakeWorld();details();obstacleScenery();campBuild();}
+  else{sky();ridges();terrain();meadow();details();obstacleScenery();chapel();relicArch();skyline();campBuild();shortcutBuild();mistBuild();}
   for(const c of game.chests||data.chests)chestBuild(c);deathDropBuild();flush();update(game,0,0);group.updateMatrixWorld(true);queryGroup.updateMatrixWorld(true);return true;
  }
  function update(game,dt,time){
@@ -441,13 +488,13 @@ function create({THREE:T,scene}){
   if(camp){const restful=game.phase==='rest',pulse=Math.sin(t*7)*.035+Math.sin(t*13.1)*.02;camp.userData.fire.scale.y=(restful?1.18:1)+pulse;camp.userData.glow.scale.setScalar(3.2*(restful?1.2:1)*(1+pulse));}
   for(const f of flickers)if(f.l!==cake?.userData.light)f.l.intensity=f.base*(1+(Math.sin(t*9+f.seed)*.6+Math.sin(t*23+f.seed*2)*.4)*f.amount);
   for(const g of glows)if(g.sprite!==camp?.userData.glow)g.sprite.material.opacity=g.base*(1+Math.sin(t*6+g.seed)*.08);
-  if(skyMat)skyMat.uniforms.time.value=t;if(group.userData.shaftMat)group.userData.shaftMat.uniforms.time.value=t;
+  if(skyMat)skyMat.uniforms.time.value=t;if(group.userData.waterMat)group.userData.waterMat.uniforms.time.value=t;if(gateRing){gateRing.userData.disc.uniforms.time.value=t;}if(group.userData.shaftMat)group.userData.shaftMat.uniforms.time.value=t;
   if(cake){const lit=!!w.finalDefeated&&game.phase!=='won';cake.visible=!!w.finalDefeated;for(const f of cake.userData.flames){f.visible=lit;f.scale.y=1+Math.sin(t*14+f.position.x*9)*.18;}cake.userData.glow.visible=lit;cake.userData.light.intensity=lit?3.2*(1+Math.sin(t*11)*.12):0;}
   if(altar){altar.userData.light.visible=!!w.bossDefeated;altar.userData.light.position.y=.86+Math.sin(t*1.5)*.07;altar.userData.light.rotation.y=t*.2;}
   for(const c of game.chests||[]){const r=chestModels.get(c.id);if(!r)continue;const opening=c.opened||c.revealing,target=opening?-1.85:0;r.lid.rotation.x=delta?r.lid.rotation.x+(target-r.lid.rotation.x)*smooth:target;r.rune.visible=!opening;r.rune.rotation.y=t*.25;r.g.position.set(c.x,finite(c.y),c.z);}
   const drop=w.deathDrop;if(deathDrop){deathDrop.visible=!!drop&&finite(drop.coins)>0;if(drop){deathDrop.position.set(finite(drop.x),finite(drop.y),finite(drop.z));deathDrop.userData.shard.position.y=.5+Math.sin(t*2)*.06;deathDrop.userData.shard.rotation.y=t*.6;}}
  }
- return{load,update,clear,theme:()=>palette,getOccluders:()=>occluders,getCameraOccluders:()=>cameraOccluders};
+ return{load,update,clear,theme,getOccluders:()=>occluders,getCameraOccluders:()=>cameraOccluders};
 }
 root.HatWildsWorld={create};
 })(typeof globalThis!=='undefined'?globalThis:this);
