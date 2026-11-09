@@ -3,7 +3,7 @@
 
 // View-only layer: simulation owns hits, locked attack shapes and both clocks.
 function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=null,getEnemyBladeSegments=null}){
- const group=new T.Group();group.name='Quiet battle FX';scene.add(group);
+ const group=new T.Group();group.name='Battle contact FX';scene.add(group);
  const C={mint:0x83b9ab,ice:0xa9c2cd,purple:0x9e94b9,gold:0xc7a968,red:0xc87a68,blue:0x629fb5,steel:0xb2b9be,wood:0x79543c,feather:0xcbbf9e,fire:0xba683c,ember:0xdb9a50,goo:0x86a15d,dust:0x9e9587,blade:0xd7ddc3,clang:0xd5b575,break:0x807767,danger:0xb44f36};
  const UP=new T.Vector3(0,1,0),AXIS=new T.Vector3(1,0,0),dummy=new T.Object3D(),tmp=new T.Vector3(),color=new T.Color(),flight=new T.Vector3(),flightQ=new T.Quaternion();
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),finite=(n,f=0)=>Number.isFinite(n)?n:f;
@@ -19,7 +19,7 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
  const arrowTip=combine([polygon([[.67,0],[.31,.13],[.37,0],[.31,-.13]]).rotateX(Math.PI/2),polygon([[.67,0],[.31,.1],[.37,0],[.31,-.1]])]);
  const arrowFeathers=combine([0,Math.PI*2/3,Math.PI*4/3].map(a=>polygon([[-.64,0],[-.57,.15],[-.32,.15],[-.39,0]]).rotateX(a)));
  const geo={box:new T.BoxGeometry(1,1,1),plane:new T.PlaneGeometry(1,1),diamond:new T.OctahedronGeometry(1,0),
-  ring:new T.RingGeometry(.97,1,32).rotateX(-Math.PI/2),arc:band(-.82,.82,.038),edge:band(-.82,.82,.012),crescent:band(-1.3,1.3,.11,20),
+  ring:new T.RingGeometry(.97,1,32).rotateX(-Math.PI/2),contactRing:new T.RingGeometry(.87,1,24),star:polygon([[0,.5],[.09,.12],[.5,0],[.09,-.12],[0,-.5],[-.09,-.12],[-.5,0],[-.09,.12]]),arc:band(-.82,.82,.038),edge:band(-.82,.82,.012),crescent:band(-1.3,1.3,.11,20),
   shaft:new T.CylinderGeometry(.031,.035,1.01,6).rotateZ(-Math.PI/2).translate(-.145,0,0),arrowTip,arrowFeathers,
   orb:new T.IcosahedronGeometry(1,0),flame:new T.ConeGeometry(.20,.82,5).rotateZ(Math.PI/2).translate(-.3,0,0),
   drop:new T.LatheGeometry([new T.Vector2(0,-.65),new T.Vector2(.035,-.43),new T.Vector2(.15,-.16),new T.Vector2(.23,.06),new T.Vector2(.18,.23),new T.Vector2(0,.32)],8).rotateZ(-Math.PI/2)};
@@ -27,51 +27,71 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
  // At most three non-additive surfaces per transient; no parallel particle engine.
  const rigs=Array.from({length:18},()=>{const g=new T.Group(),materials=[mat(C.mint,.6),mat(C.ice,.45),mat(C.dust,.35)],meshes=materials.map(m=>{const mesh=new T.Mesh(geo.arc,m);g.add(mesh);return mesh;});g.visible=false;group.add(g);return{g,materials,meshes,alpha:[.58,.36,.28],active:false,age:0,life:1,serial:0};});
  function shape(r,i,g,sx=1,sy=sx,sz=sx,x=0,y=0,z=0){const m=r.meshes[i];m.geometry=g;m.visible=true;m.position.set(x,y,z);m.rotation.set(0,0,0);m.scale.set(sx,sy,sz);return m;}
- function alloc(kind,e,life,tint=C.mint){const r=rigs.find(v=>!v.active)||rigs.reduce((a,b)=>a.serial<b.serial?a:b),p=point(e,lastGame?.player);Object.assign(r,{kind,active:true,age:0,life:Math.max(.04,life),serial:++serial,p,dir:direction(e,lastGame?.player),radius:finite(e.radius,finite(e.range,1)),delay:Math.max(0,finite(e.delay))});r.g.visible=!r.delay;r.g.position.set(p.x,p.y,p.z);r.g.rotation.set(0,0,0);r.g.scale.setScalar(1);for(let i=0;i<3;i++){r.materials[i].color.set(i===1?C.ice:tint);r.alpha[i]=i===0?.58:i===1?.36:.28;r.materials[i].opacity=r.alpha[i];r.meshes[i].visible=false;}return r;}
+ function alloc(kind,e,life,tint=C.mint){const r=rigs.find(v=>!v.active)||rigs.reduce((a,b)=>a.serial<b.serial?a:b),p=point(e,lastGame?.player);Object.assign(r,{kind,active:true,age:0,life:Math.max(.04,life),serial:++serial,p,dir:direction(e,lastGame?.player),radius:finite(e.radius,finite(e.range,1)),delay:Math.max(0,finite(e.delay))});r.g.name='Contact FX | '+kind;r.g.visible=!r.delay;r.g.position.set(p.x,p.y,p.z);r.g.rotation.set(0,0,0);r.g.scale.setScalar(1);for(let i=0;i<3;i++){r.materials[i].color.set(i===1?C.ice:tint);r.alpha[i]=i===0?.58:i===1?.36:.28;r.materials[i].opacity=r.alpha[i];r.meshes[i].visible=false;}return r;}
  function orient(r){r.g.rotation.y=-Math.atan2(r.dir.z,r.dir.x);}
  function groundRing(e,tint=C.mint,life=.28,kind='ring'){const r=alloc(kind,e,life,tint),floor=groundAt(r.p.x,r.p.z,r.p.y);r.g.position.y=floor+.055;if(Math.abs(floor-root.HatTerrain.heightAt(r.p.x,r.p.z))<.02){const n=root.HatTerrain.normalAt(r.p.x,r.p.z);tmp.set(n.x,n.y,n.z);r.g.quaternion.setFromUnitVectors(UP,tmp);}shape(r,0,geo.ring,r.radius,1,r.radius);return r;}
 
- // The sword owns this path. All positions, history and three geometry buffers
- // are allocated once; no ring, camera billboard or procedural swing is used.
- const BLADE_CAP=10,bladeHistory=Array.from({length:BLADE_CAP},()=>({base:new T.Vector3(),tip:new T.Vector3(),at:0}));
- const bladeLayers=[{from:.47,to:1,alpha:.25,tint:C.mint},{from:.83,to:1,alpha:.6,tint:C.ice},{from:.96,to:1.015,alpha:1,tint:C.blade}].map((layer,i)=>{
+ // Four bounded ribbons follow the physical sword. The wide low-opacity layer
+ // reads as a soft glow without bloom or additive overlap washing out the scene.
+ const BLADE_CAP=22,bladeHistory=Array.from({length:BLADE_CAP},()=>({base:new T.Vector3(),tip:new T.Vector3(),at:0}));
+ const bladeLayers=[{from:.24,to:1.065,alpha:.12,tint:0xbce9cf},{from:.37,to:1.025,alpha:.38,tint:0xa7dcc4},{from:.76,to:1.025,alpha:.7,tint:0xd4ede3},{from:.94,to:1.035,alpha:.96,tint:0xfff5d9}].map((layer,i)=>{
   const positions=new Float32Array((BLADE_CAP-1)*18),geometry=new T.BufferGeometry(),attribute=new T.BufferAttribute(positions,3);attribute.setUsage(T.DynamicDrawUsage);geometry.setAttribute('position',attribute);geometry.setDrawRange(0,0);
-  const mesh=new T.Mesh(geometry,mat(layer.tint,layer.alpha,i===2));mesh.frustumCulled=false;mesh.visible=false;mesh.renderOrder=i+1;group.add(mesh);return{...layer,mesh,positions,geometry,attribute};
+  const mesh=new T.Mesh(geometry,mat(layer.tint,layer.alpha));mesh.name='Player blade trail | '+i;mesh.frustumCulled=false;mesh.visible=false;mesh.renderOrder=i+1;group.add(mesh);return{...layer,mesh,positions,geometry,attribute};
  });
- let bladeCount=0,bladeStart=0,bladeAttackId=null,bladeClock=0,bladeLife=.07,bladeHeavy=false,bladeCounter=false;
- function clearBlade(){bladeCount=bladeStart=0;bladeAttackId=null;for(const l of bladeLayers){l.mesh.visible=false;l.geometry.setDrawRange(0,0);}}
+ let bladeCount=0,bladeStart=0,bladeAttackId=null,bladeClock=0,bladeLife=.12,bladeHeavy=false,bladeCounter=false,bladeWasFrozen=false;
+ const previousBlade={base:new T.Vector3(),tip:new T.Vector3(),attackId:null,at:0,valid:false};
+ const tipGlint=new T.Group(),tipHalo=new T.Mesh(geo.star,mat(C.gold,.2)),tipCore=new T.Mesh(geo.star,mat(0xfff5d9,.85));tipGlint.name='Sword windup glint';tipHalo.scale.setScalar(1.7);tipCore.position.z=.002;tipGlint.add(tipHalo,tipCore);group.add(tipGlint);tipGlint.visible=false;
+ function clearBlade(){bladeCount=bladeStart=0;bladeAttackId=null;bladeWasFrozen=false;previousBlade.valid=false;tipGlint.visible=false;for(const l of bladeLayers){l.mesh.visible=false;l.geometry.setDrawRange(0,0);}}
+ function updateTipGlint(p,blade){
+  const spec=root.HatGame?.ATTACKS?.[clamp((p.combo||1)-1,0,2)],progress=clamp(finite(p.attackElapsed)/Math.max(.01,finite(spec?.windup,.11)),0,1);
+  tipGlint.visible=!!(blade?.visible&&blade.tip&&p.attackPhase==='windup'&&progress>.3);if(!tipGlint.visible)return;
+  const pulse=reduced?.55:Math.sin(clamp((progress-.3)/.7,0,1)*Math.PI),size=(reduced?.14:p.attackCounter?.35:p.combo>=3?.3:.24)*(.45+.55*pulse);
+  tipGlint.position.copy(blade.tip);tipGlint.quaternion.copy(cameraView.quaternion);tipGlint.scale.setScalar(size);tipCore.material.opacity=(reduced?.55:.9)*pulse;tipHalo.visible=!reduced;tipHalo.material.opacity=.18*pulse;
+ }
  function bladeVertex(array,k,s,f){array[k]=s.base.x+(s.tip.x-s.base.x)*f;array[k+1]=s.base.y+(s.tip.y-s.base.y)*f;array[k+2]=s.base.z+(s.tip.z-s.base.z)*f;return k+3;}
  function rebuildBlade(){for(let layerIndex=0;layerIndex<bladeLayers.length;layerIndex++){
   const l=bladeLayers[layerIndex];let k=0;
   for(let i=1;i<bladeCount;i++){
    const a=bladeHistory[(bladeStart+i-1)%BLADE_CAP],b=bladeHistory[(bladeStart+i)%BLADE_CAP],fadeA=clamp(1-(bladeClock-a.at)/bladeLife,0,1),fadeB=clamp(1-(bladeClock-b.at)/bladeLife,0,1);
-   // A narrowing tail keeps the solid edge crisp at the low render resolution.
-   const width=bladeHeavy?1:.82,fa=l.to-(l.to-l.from)*fadeA*width,fb=l.to-(l.to-l.from)*fadeB*width;
+   // A narrowing tail keeps the bright edge crisp at the low render resolution.
+   const width=(bladeHeavy?1:.9)*(reduced?.72:1),fa=l.to-(l.to-l.from)*fadeA*width,fb=l.to-(l.to-l.from)*fadeB*width;
    k=bladeVertex(l.positions,k,a,fa);k=bladeVertex(l.positions,k,a,l.to);k=bladeVertex(l.positions,k,b,fb);
    k=bladeVertex(l.positions,k,a,l.to);k=bladeVertex(l.positions,k,b,l.to);k=bladeVertex(l.positions,k,b,fb);
   }
-  l.geometry.setDrawRange(0,k/3);l.attribute.needsUpdate=true;l.mesh.visible=k>0;
-  l.mesh.material.color.set(layerIndex===2?C.blade:bladeCounter?C.clang:bladeHeavy?C.gold:layerIndex===1?C.ice:C.mint);
+  l.geometry.setDrawRange(0,k/3);l.attribute.needsUpdate=true;l.mesh.visible=k>0&&(!reduced||layerIndex>0);
+  const newest=bladeCount?bladeHistory[(bladeStart+bladeCount-1)%BLADE_CAP]:null,fade=newest?clamp(1-(bladeClock-newest.at)/bladeLife,0,1):0;
+  l.mesh.material.opacity=l.alpha*fade*(reduced?.8:1);l.mesh.material.color.set(layerIndex===3?0xfff5d9:bladeCounter?0xffd88f:bladeHeavy?0xe8c787:l.tint);
  }}
+ function appendBladeSample(blade,at){
+  if(bladeCount===BLADE_CAP){bladeStart=(bladeStart+1)%BLADE_CAP;bladeCount--;}
+  const sample=bladeHistory[(bladeStart+bladeCount++)%BLADE_CAP];sample.base.copy(blade.base);sample.tip.copy(blade.tip);sample.at=at;
+ }
  function updateBlade(game,dt){const p=game.player;
-  if(game.phase!=='play'||p.dead||p.hp<=0||p.weaponMode==='bow'||p.guardActive||p.guardBreakTimer>0){clearBlade();return;}
+  if(game.phase==='paused')return;
+  if(game.phase!=='play'||p.dead||p.hp<=0||p.weaponMode==='bow'||p.guardActive||p.guardBreakTimer>0||p.hurtTimer>0||p.dash?.active){clearBlade();return;}
   const blade=typeof getBladeSegment==='function'?getBladeSegment():null;
   if(blade?.visible===false){clearBlade();return;}
   if(blade&&bladeAttackId!==blade.attackId){clearBlade();bladeAttackId=blade.attackId;}
-  // Impacts continue on the presentation clock; a held actor pose contributes
-  // no duplicate samples and its existing ribbon remains attached during stop.
-  if(game.impactFrozen||dt<=0)return;
-  bladeClock+=dt;
+  updateTipGlint(p,blade);
+  // A slow frame can contain both the hit and the first frozen simulation step.
+  // Sample that newly arrived contact pose once, without advancing the ribbon
+  // clock. Subsequent frozen frames neither age nor duplicate its samples.
+  const frozen=!!game.impactFrozen;if(frozen&&bladeWasFrozen||!frozen&&dt<=0)return;
+  bladeWasFrozen=frozen;if(!frozen)bladeClock+=dt;
   while(bladeCount&&bladeClock-bladeHistory[bladeStart].at>bladeLife){bladeStart=(bladeStart+1)%BLADE_CAP;bladeCount--;}
   if(blade?.active&&blade.base&&blade.tip){
-   bladeHeavy=blade.combo>=3||blade.jumpAttack;bladeCounter=!!blade.counter;bladeLife=bladeCounter?.085:bladeHeavy?.09:blade.combo===2?.075:.065;
-   const last=bladeCount?bladeHistory[(bladeStart+bladeCount-1)%BLADE_CAP]:null;
-   if(!last||bladeClock-last.at>=.008&&last.tip.distanceToSquared(blade.tip)+last.base.distanceToSquared(blade.base)>.00035){
-    if(bladeCount===BLADE_CAP){bladeStart=(bladeStart+1)%BLADE_CAP;bladeCount--;}
-    const sample=bladeHistory[(bladeStart+bladeCount++)%BLADE_CAP];sample.base.copy(blade.base);sample.tip.copy(blade.tip);sample.at=bladeClock;
+   bladeHeavy=blade.combo>=3||blade.jumpAttack;bladeCounter=!!blade.counter;bladeLife=reduced?((bladeHeavy||bladeCounter)?.09:.075):bladeCounter?.16:bladeHeavy?.15:blade.combo===2?.14:.12;
+   // Cache real windup poses but never draw them until the damaging phase. This
+   // supplies the start of a sweep even when its first visible frame is a hit.
+   if(!bladeCount&&previousBlade.valid&&previousBlade.attackId===blade.attackId&&bladeClock-previousBlade.at<=.08){
+    const moved=previousBlade.tip.distanceToSquared(blade.tip)+previousBlade.base.distanceToSquared(blade.base);if(moved>.00035&&moved<25)appendBladeSample(previousBlade,previousBlade.at);
    }
+   const last=bladeCount?bladeHistory[(bladeStart+bladeCount-1)%BLADE_CAP]:null;
+   if(!last||(frozen||bladeClock-last.at>=.008)&&last.tip.distanceToSquared(blade.tip)+last.base.distanceToSquared(blade.base)>.00035)appendBladeSample(blade,bladeClock);
   }
   rebuildBlade();
+  previousBlade.valid=!!(blade?.visible&&blade.base&&blade.tip&&(p.attackPhase==='windup'||p.attackPhase==='active'));
+  if(previousBlade.valid){previousBlade.base.copy(blade.base);previousBlade.tip.copy(blade.tip);previousBlade.attackId=blade.attackId;previousBlade.at=bladeClock;}
  }
 
  // A short, narrow ribbon follows each actual enemy sword. Four bounded
@@ -96,12 +116,12 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
    if(!r.count&&!b?.active)clearEnemyTrail(r);
   }
  }
- const SPARK_CAP=80,sparks=[];
+ const SPARK_CAP=reduced?48:120,sparks=[];
  function instanced(g,cap,material){const mesh=new T.InstancedMesh(g,material,cap);mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);mesh.count=0;mesh.frustumCulled=false;group.add(mesh);return mesh;}
- const sparkMesh=instanced(geo.box,SPARK_CAP,mat(0xffffff,1,true));
+ const sparkMesh=instanced(geo.box,SPARK_CAP,mat(0xffffff,1,true));sparkMesh.name='Contact sparks';
  function dirty(m,count){if(count===0&&m.count===0)return;m.count=count;if(count){m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;}}
  function put(mesh,i,p,q,sx,sy=sx,sz=sx,tint=0xffffff){dummy.position.set(p.x,p.y,p.z);dummy.quaternion.copy(q);dummy.scale.set(sx,sy,sz);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);color.set(tint);mesh.setColorAt(i,color);}
- function burst(p,tint,n=4,force=2.5,dir=null,contact=false){n=Math.min(reduced?6:9,n,SPARK_CAP-sparks.length);for(let i=0;i<n;i++){const a=dir?Math.atan2(dir.z,dir.x)+(Math.random()-.5)*(contact?1.7:1.15):Math.random()*Math.PI*2,s=force*(.3+Math.random()*.7),life=contact?.15+Math.random()*.1:.13+Math.random()*.08;sparks.push({x:p.x,y:p.y,z:p.z,vx:Math.cos(a)*s,vy:(contact?1.1:.7)+Math.random()*1.6,vz:Math.sin(a)*s,tint:i===0&&contact?C.blade:tint,life,max:life,size:(contact?.055:.035)+Math.random()*.025,stretch:contact?3.3:2.5});}}
+ function burst(p,tint,n=4,force=2.5,dir=null,contact=false){n=Math.min(reduced?4:14,reduced?Math.ceil(n*.45):n,SPARK_CAP-sparks.length);for(let i=0;i<n;i++){const a=dir?Math.atan2(dir.z,dir.x)+(Math.random()-.5)*(contact?1.7:1.15):Math.random()*Math.PI*2,s=force*(reduced?.55:1)*(.3+Math.random()*.7),life=contact?.15+Math.random()*.1:.13+Math.random()*.08;sparks.push({x:p.x,y:p.y,z:p.z,vx:Math.cos(a)*s,vy:(contact?1.1:.7)+Math.random()*1.6,vz:Math.sin(a)*s,tint:i===0&&contact?C.blade:tint,life,max:life,size:(contact?.055:.035)+Math.random()*.025,stretch:contact?3.3:2.5});}}
  function updateSparks(dt){if(!sparks.length){dirty(sparkMesh,0);return;}let n=0;for(let i=sparks.length-1;i>=0;i--){const p=sparks[i];p.life-=dt;if(p.life<=0){sparks[i]=sparks[sparks.length-1];sparks.pop();continue;}p.vy-=10*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;tmp.set(p.vx,p.vy,p.vz);dummy.quaternion.setFromUnitVectors(AXIS,tmp.normalize());const s=p.size*clamp(p.life/p.max*2,0,1);put(sparkMesh,n++,p,dummy.quaternion,s*p.stretch,s,s,p.tint);}dirty(sparkMesh,n);}
 
  // A 64-projectile budget preserves the prior visibility cap across nine
@@ -181,7 +201,13 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
  function updateReward(dt){if(!reward.active)return;reward.age+=dt;if(reward.age>=reward.life){reward.active=false;reward.g.visible=false;return;}const t=clamp((reward.age-.22)/Math.max(.12,reward.life-.22),0,1),fade=1-t;reward.crystal.visible=reward.glint.visible=reward.revealed;reward.crystal.position.set(0,1.1+t*.42,0);reward.crystal.rotation.y=reward.age*1.7;reward.crystal.scale.set(.22,.34,.22);reward.crystal.material.opacity=.85*fade;reward.glint.position.set(.23,1.35+t*.42,0);reward.glint.quaternion.copy(cameraView.quaternion);reward.glint.scale.set(.035,.09,.035);reward.glint.material.opacity=.65*fade;}
 
  function slash(e,game,ghost=false){const enemy=e.type==='enemySwing',combo=e.combo||game.player.combo||1,tint=enemy?C.red:ghost?C.ice:combo===3?C.gold:C.mint,r=alloc('slash',e,Math.min(.2,finite(e.duration,.16)),tint);r.radius=finite(e.range,2.5);r.combo=combo;r.ghost=ghost;orient(r);r.g.position.y+=.9;shape(r,0,geo.arc,r.radius,1,r.radius);shape(r,1,geo.edge,r.radius*.98,1,r.radius*.98,0,.025,0);}
+ function contactImpact(e,at,heavy,tint){
+  const r=alloc('contactImpact',{...e,...at},reduced?.13:heavy?.22:.17,tint);r.heavy=heavy;r.radius=reduced?.24:heavy?.46:.33;r.g.quaternion.copy(cameraView.quaternion);r.alpha[0]=reduced?.65:.92;r.alpha[1]=reduced?.22:.48;r.alpha[2]=.86;
+  const size=reduced?.38:heavy?.86:.62;shape(r,0,geo.star,size,size*.78,1).rotation.z=heavy?.2:e.combo===2?.6:-.3;shape(r,1,geo.contactRing,r.radius*(reduced?1:.64),r.radius*(reduced?1:.64),1,0,0,-.006);shape(r,2,geo.diamond,reduced?.035:heavy?.075:.055);r.materials[0].color.set(e.attackCounter?0xffd88f:0xffe8b6);r.materials[2].color.set(0xfff5d9);
+  for(let i=0;i<3;i++)r.materials[i].opacity=r.alpha[i];
+ }
  function impact(e,game,light=false){const at=point(e.contactPoint,e),heavy=!!e.heavy||e.combo>=3||e.attackCounter,tint=e.type==='hurt'?C.red:e.attackCounter?C.clang:e.targetType==='guard'?C.steel:e.origin==='reaction'?C.ice:C.gold;
+  if(e.type==='hit'&&!light&&e.origin!=='reaction'){contactImpact(e,at,heavy,tint);burst(at,tint,heavy?14:9,heavy?5.6:4.2,direction(e,game.player),true);return;}
   const r=alloc('cut',{...e,...at},light?.105:heavy?.2:.15,tint);orient(r);r.heavy=heavy;r.alpha[0]=.92;r.alpha[1]=.82;r.alpha[2]=.4;
   const angle=heavy?1.34:e.combo===2?.68:-.56,length=light?.32:heavy?.93:.66;
   shape(r,0,geo.box,length,light?.055:heavy?.105:.075,.07).rotation.z=angle;
@@ -213,10 +239,11 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
    case 'block':case 'parry':case 'guardBreak':clearBlade();shieldContact(e,game);break;
    case 'counterStrike':clearBlade();break; // The ensuing sword stroke and hit carry the gold counter cue.
    case 'mirrorSlash':slash(e,game,true);break;
-   case 'hit':case 'hurt':impact(e,game,e.origin==='reaction');break;
+   case 'hit':impact(e,game,e.origin==='reaction');break;
+   case 'hurt':clearBlade();impact(e,game,e.origin==='reaction');break;
    case 'projectileHit':if(e.kind==='cake'){groundRing({...e,y:finite(e.groundY,finite(e.y)-.55),radius:.7},0xff8fb8,.3,'splash');burst(point(e),0xfff1e2,7,3.2);confettiBurst(point(e),10,2.2,2.4);}else if(e.kind==='bossOrb')elementImpact(e);else if(e.kind==='water')elementImpact(e,true);else if(!e.targetId||e.targetId==='wall'){impact({...e,targetType:'guard'},game,true);if(['arrow','bowArrow','ricochetBolt'].includes(e.kind))lodgeArrow(e);}break;
    case 'kill':burst(at,e.targetType==='slime'?C.goo:C.dust,e.targetType==='boss'?5:2,2.2);break;
-   case 'dashStart':burst({...at,y:at.y+.08},C.dust,4,1.5,{x:-finite(e.dirX,p.dirX),z:-finite(e.dirZ,p.dirZ)});break;
+   case 'dashStart':clearBlade();burst({...at,y:at.y+.08},C.dust,4,1.5,{x:-finite(e.dirX,p.dirX),z:-finite(e.dirZ,p.dirZ)});break;
    case 'novaPull':groundRing(e,C.purple,finite(e.duration,.28),'pull');break;
    case 'windWhirl':case 'nova':groundRing(e,C.purple,.26,'whirl');break;
    case 'windCut':{const r=alloc('windLaunch',e,.16,C.mint);orient(r);r.g.position.y+=.8;shape(r,0,geo.arc,.6,1,.6);break;}
@@ -257,6 +284,7 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
    else if(['ring','splash','arrival'].includes(r.kind)){const rr=r.radius*(.88+ease*.12);m[0].scale.set(rr,1,rr);if(r.kind==='arrival')r.materials[0].opacity=Math.sin(t*Math.PI)*.32;}
    else if(r.kind==='pull'||r.kind==='whirl'){const rr=r.radius*(r.kind==='pull'?1-t*.15:.92+ease*.08);m[0].scale.set(rr,1,rr);r.materials[0].opacity=out*.32;}
    else if(r.kind==='thrust'){const reach=.6+ease*(r.radius-.6);m[0].scale.x=reach;m[0].position.x=reach*.5;}
+   else if(r.kind==='contactImpact'){r.g.quaternion.copy(cameraView.quaternion);const spread=reduced?1:.64+ease*.52;m[1].scale.set(r.radius*spread,r.radius*spread,1);r.g.scale.setScalar(reduced?1:1+Math.sin(t*Math.PI)*.08);r.materials[0].opacity=r.alpha[0]*Math.pow(out,1.6);r.materials[1].opacity=r.alpha[1]*out;r.materials[2].opacity=r.alpha[2]*Math.max(0,1-t*2.5);}
    else if(r.kind==='cut'){const push=ease*(r.heavy?.16:.085);r.g.position.set(r.p.x+r.dir.x*push,r.p.y-(r.heavy?ease*.07:0),r.p.z+r.dir.z*push);r.g.scale.setScalar(.92+Math.min(t*4,1)*.14);}
    else if(r.kind==='block'||r.kind==='parry'){r.g.quaternion.copy(cameraView.quaternion);r.g.scale.setScalar(1+t*.12);for(let i=0;i<3;i++)r.materials[i].opacity=r.alpha[i]*Math.min(1,out*2.3);}
    else if(r.kind==='guardBreak'){r.g.quaternion.copy(cameraView.quaternion);for(let i=0;i<3;i++){m[i].position.x=(i-1)*(.17+t*.27);m[i].position.y=.03-t*t*.38;m[i].rotation.z=(i-1)*(.8+t*.7);}}

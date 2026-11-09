@@ -9,6 +9,7 @@ sunlight.castShadow=true;sunlight.shadow.mapSize.set(1024,1024);Object.assign(su
 const manager=new T.LoadingManager();let spriteError=false;const spritesReady=new Promise(resolve=>{manager.onLoad=resolve;manager.onError=()=>{spriteError=true;};});
 const world=window.HatWildsWorld.create({THREE:T,scene}),actors=window.HatActors.create({THREE:T,scene,camera,manager}),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,fx=window.HatBattleFX.create({THREE:T,scene,camera,reduced,getBladeSegment:()=>actors.getBladeSegment?.(),getEnemyBladeSegments:()=>actors.getEnemyBladeSegments?.()}),audio=window.HatAudio.create(),routeUI=window.HatRouteUI.create(),renderState=window.HatRenderState.create();
 const shoulder=window.HatShoulderCamera.create({THREE:T,camera,getOccluders:()=>world.getOccluders(),getCameraOccluders:()=>world.getCameraOccluders()}),shoulderHUD=window.HatShoulderHUD.create({THREE:T,camera});
+const impactCamera=window.HatImpactCamera.create({reduced}),renderCameraPosition=new T.Vector3();
 let game=G.createGame(),loading=true,loadTicket=0,acc=0,last=performance.now(),lastPhase='',noticeTime=0,clock=0,stepTime=0,boonKey='',hudTime=0,resumePhase='play',revision=game.wildsRevision;
 const numbers=[],numberPosition=new T.Vector3(),numberLocal=new T.Vector3(),inverseCamera=new T.Quaternion();
 function notify(text,seconds=2.7){$('notice').textContent=text;$('notice').classList.add('show');noticeTime=seconds;}
@@ -22,6 +23,7 @@ addEventListener('resize',resize);resize();
 function hidePanels(){for(const id of ['intro','result','camp-panel','upgrade-panel'])$(id).hidden=true;}
 function syncPhase(){
  if(game.phase===lastPhase)return;lastPhase=game.phase;document.body.className=game.phase==='play'?'playing':game.phase;
+ if(game.phase!=='play')impactCamera.reset();
  if(game.phase==='play'){audio.pause(false);$('overlay').classList.remove('result-mode');canvas.focus();return;}
  controls.release();clearInput();
  if(game.phase==='ready'){hidePanels();$('intro').hidden=false;$('overlay').classList.remove('result-mode');audio.pause(true);return;}
@@ -32,7 +34,7 @@ function syncPhase(){
 function start(){if(loading||game.phase!=='ready')return;game.phase='play';audio.unlock();audio.setLevel(0);clearInput();syncPhase();controls.capture();routeUI.arrive(game);notify('右键举盾 · 迎击瞬间精准格挡 · C 切换弓箭',3.5);}
 function togglePause(){if(loading)return;if(game.phase==='rest'){leaveCamp();return;}if(['play','treasure'].includes(game.phase)){resumePhase=game.phase;game.phase='paused';syncPhase();}else if(game.phase==='paused')resume();}
 function resume(){if(loading||game.phase!=='paused')return;game.phase=resumePhase;audio.unlock();clearInput();syncPhase();if(game.phase==='play')controls.capture();}
-function resetPresentation(resetCamera=false){actors.reset(game);fx.reset();renderState.reset(game);for(const n of numbers)n.el.remove();numbers.length=0;world.update(game,0,clock);scene.updateMatrixWorld(true);if(resetCamera)shoulder.reset(game);revision=game.wildsRevision;}
+function resetPresentation(resetCamera=false){actors.reset(game);fx.reset();impactCamera.reset();renderState.reset(game);for(const n of numbers)n.el.remove();numbers.length=0;world.update(game,0,clock);scene.updateMatrixWorld(true);if(resetCamera)shoulder.reset(game);revision=game.wildsRevision;}
 function syncRevision(){if(revision===game.wildsRevision)return;const teleport=game.events.some(e=>['rest','respawn','bossAwake'].includes(e.type));resetPresentation(teleport);}
 async function loadArea(){const ticket=++loadTicket;loading=true;clearInput();$('loading').hidden=false;$('loading-label').textContent='正在走进暮丘遗迹…';
  try{await Promise.all([world.load(game),spritesReady]);if(ticket!==loadTicket)return;if(spriteError)throw Error('角色图像未能载入');const theme=world.theme(0);sunlight.color.set(theme.key);ambient.color.set(theme.ambient);resetPresentation(true);clock=0;loading=false;$('loading').hidden=true;last=performance.now();lastPhase='';boonKey='';syncPhase();audio.setLevel(0);hud();}
@@ -56,7 +58,7 @@ function showUpgrade(){const choices=$('upgrade-choices');choices.replaceChildre
 function choose(index){if(game.phase!=='upgrade')return;const id=game.upgradeChoices[index];if(!id)return;G.chooseUpgrade(game,id);audio.pause(false);effects(game.events);clearInput();syncPhase();controls.capture();}
 function damageNumber(e){if(numbers.length>=6)numbers.shift().el.remove();const el=document.createElement('span');el.className='damage-number'+(e.heavy?' heavy':'');el.textContent=Math.round(e.value||e.damage||0);$('damage-numbers').append(el);numbers.push({el,x:e.x,y:e.y+.6,z:e.z,age:0,life:.58,drift:(Math.random()-.5)*.4});}
 function effects(events){const aliases={dashStart:'dodge',mirrorSlash:'swing',guardReflect:'projectileHit',starBurst:'projectileHit',crescentLaunch:'bolt',bossAwake:'arenaStart',finalDefeated:'arenaClear',bossDefeated:'arenaClear',emberRecovered:'pickup',shortcutOpen:'checkpoint',rest:'checkpoint',drinkStart:'ui'};
- for(const e of events){fx.emit(e,game);actors.emit(e);audio.effect({...e,type:aliases[e.type]||e.type,intensity:e.origin==='reaction'?.4:1,pan:Math.max(-.8,Math.min(.8,((e.x??game.player.x)-game.player.x)/14))});
+ for(const e of events){fx.emit(e,game);impactCamera.emit(e);actors.emit(e);audio.effect({...e,type:aliases[e.type]||e.type,intensity:e.origin==='reaction'?.4:1,pan:Math.max(-.8,Math.min(.8,((e.x??game.player.x)-game.player.x)/14))});
   if(e.type==='hit'&&e.origin!=='reaction'&&(e.heavy||e.value>=35))damageNumber(e);
   if(e.type==='upgrade')notify('获得遗物「'+G.PERKS[e.perkId].name+'」',2.8);
   if(e.type==='treasureOpen'){noticeTime=0;$('notice').classList.remove('show');}
@@ -91,7 +93,14 @@ function hud(elapsed=0){const p=game.player,boss=game.enemies.find(e=>e.type==='
 function draw(combatDt,revealDt,view){const visualDt=Math.max(combatDt,revealDt);clock+=visualDt;world.update(game,visualDt,clock);shoulder.update(view,combatDt);inverseCamera.copy(camera.quaternion).invert();actors.update(view,game.impactFrozen?0:combatDt);fx.update(view,combatDt,revealDt);defenseHUD();
  for(let i=numbers.length-1;i>=0;i--){const n=numbers[i];n.age+=combatDt;if(n.age>=n.life){n.el.remove();numbers.splice(i,1);continue;}numberPosition.set(n.x+n.drift*n.age,n.y+n.age*.9,n.z);numberLocal.copy(numberPosition).sub(camera.position).applyQuaternion(inverseCamera);numberPosition.project(camera);n.el.hidden=numberLocal.z>=0||Math.abs(numberPosition.x)>1||Math.abs(numberPosition.y)>1;n.el.style.left=(numberPosition.x*.5+.5)*100+'%';n.el.style.top=(-numberPosition.y*.5+.5)*100+'%';n.el.style.opacity=Math.min(.85,(n.life-n.age)*5);}
  if(combatDt>0&&!game.impactFrozen){const p=view.player;stepTime+=combatDt;if(p.grounded&&Math.hypot(p.vx,p.vz)>.1&&!p.dash.active&&stepTime>(p.sprinting?.23:.34)){stepTime=0;audio.effect({type:'step',intensity:.5});}}
- shoulderHUD.update(view,shoulder.aim(view));const inspect=window.__hat?.inspect;if(inspect){camera.position.set(inspect[0],inspect[1],inspect[2]);camera.lookAt(inspect[3],inspect[4],inspect[5]);}renderer.render(scene,camera);recorder.render();
+ shoulderHUD.update(view,shoulder.aim(view));const inspect=window.__hat?.inspect;if(inspect){camera.position.set(inspect[0],inspect[1],inspect[2]);camera.lookAt(inspect[3],inspect[4],inspect[5]);}
+ const impulse=impactCamera.update(combatDt),shakeScale=shoulder.getState().obstructed?.35:1;
+ renderCameraPosition.copy(camera.position);
+ // Apply only for rendering, then restore the exact camera used for aiming.
+ // The existing camera safety shell exceeds this bounded .095 m offset.
+ try{if(!inspect&&game.phase==='play'){camera.translateX(impulse.x*shakeScale);camera.translateY(impulse.y*shakeScale);}renderer.render(scene,camera);}
+ finally{camera.position.copy(renderCameraPosition);camera.updateMatrixWorld(true);}
+ recorder.render();
 }
 function frame(now){
  requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;if(document.hidden)return;
@@ -106,6 +115,6 @@ $('start').onclick=start;$('pause').onclick=togglePause;$('resume').onclick=resu
 let musicEnabled=true,sfxEnabled=true;$('music').onclick=()=>{musicEnabled=!musicEnabled;audio.unlock();audio.setMusic(musicEnabled);$('music').textContent=musicEnabled?'♫ 8-bit 开':'♫ 8-bit 关';$('music').setAttribute('aria-pressed',String(musicEnabled));};$('sound').onclick=()=>{sfxEnabled=!sfxEnabled;audio.unlock();audio.setSfx(sfxEnabled);$('sound').textContent=sfxEnabled?'音效 开':'音效 关';$('sound').setAttribute('aria-pressed',String(sfxEnabled));};
 $('record').onclick=async()=>{if(loading||!['ready','play','paused'].includes(game.phase))return;if(recorder.isRecording()){await recorder.stop();return;}if(game.phase==='ready')start();if(game.phase==='paused')resume();await recorder.start(20);canvas.focus();};$('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen?.();else $('game-shell').requestFullscreen?.().catch(()=>{});};$('credits-button').onclick=()=>$('credits').showModal();$('credits-close').onclick=()=>$('credits').close();canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();if(game.phase==='play')togglePause();notify('画面连接中断，请重新打开文件。',20);});
 // Local inspection only: ?debug exposes live state for manual QA.
-if(/[?&]debug\b/.test(location.search))window.__hat={get game(){return game;},G,fx,camera,shoulder,actors,scene,renderer};
+if(/[?&]debug\b/.test(location.search))window.__hat={get game(){return game;},G,fx,impactCamera,camera,shoulder,actors,scene,renderer};
 loadArea();requestAnimationFrame(frame);
 })();

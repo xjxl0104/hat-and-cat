@@ -193,6 +193,11 @@ function create({THREE:T,scene,kind}){
  function update(e,game,dt){
   if(disposed)return;identity=e.id;dt=Math.max(0,dt||0);
   const hurt=e.hitReactionTimer||0,parry=e.parryStaggerTimer||0,newHurt=hurt>lastHurt+.001,newParry=parry>lastParry+.001;
+  // Read the simulation timer even on a frozen contact frame. Emission makes
+  // dark vertex colours flash without tinting or permanently bleaching them.
+  const flash=clamp((e.hitFlash||0)/.09,0,1);
+  material.emissive.set(flash>0?'#ffffff':parry>0?'#5a7a88':'#000000');
+  material.emissiveIntensity=flash>0?.9*smooth(flash):.35*smooth(parry/.25);
   const strikeIdentity=e.strikeId||0,contactEdge=!!e.contactReached&&(!lastContactReached||strikeIdentity!==lastStrikeIdentity);
   const cancelEdge=valid&&previousState!==e.state&&(e.dead||e.hitStun>0||previousState==='strike'||previousState==='windup');
   const resample=dt===0&&valid&&(newHurt||newParry||contactEdge||cancelEdge||!!strikeIdentity&&strikeIdentity!==lastStrikeIdentity);
@@ -201,7 +206,6 @@ function create({THREE:T,scene,kind}){
   // Simulation hit-stop freezes every local timer and ordinary cached pose.
   // Only a newly delivered contact/impact may resample authoritative state.
   if(dt===0&&valid&&!resample){
-   material.color.set(newParry?'#b9ccd0':newHurt?'#f7d4bd':material.color);
    base.visible=e.spawned!==false&&(!e.dead||death<.38);
    blade.visible=!!sword&&base.visible&&!e.dead;
    if(e.dead||e.spawned===false||e.state!=='strike'||e.hitStun>0||e.parryStaggerTimer>0||blade.attackId!==(e.strikeId||0))blade.active=false;
@@ -237,7 +241,6 @@ function create({THREE:T,scene,kind}){
   const localHitX=Math.cos(yaw)*hurtX-Math.sin(yaw)*hurtZ,localHitZ=Math.sin(yaw)*hurtX+Math.cos(yaw)*hurtZ,impact=clamp(recoil/.17,0,1),stagger=clamp(parryRecoil/.32,0,1);
   chest.rotation.x+=localHitZ*impact*.20-stagger*.22;chest.rotation.z-=localHitX*impact*.20;head.rotation.x-=impact*.10;
   if(stagger&&arms.length){arms[0].arm.rotateX(-stagger*.45);arms[0].forearm.rotateX(-stagger*.30);}
-  material.color.set(parry>0?'#b9ccd0':e.hitFlash>0?'#f4d1b4':'#ffffff');
   if(e.dead){death=Math.min(.38,death+dt);const t=smooth(death/.38);fall.position.y=(bat?1:.86)-t*(bat?.70:.65);fall.rotation.x=t*1.35;fall.rotation.z=t*.32;fall.scale.setScalar(1-t*.12);blade.active=false;}
   else death=0;
   base.visible=e.spawned!==false&&(!e.dead||death<.38);

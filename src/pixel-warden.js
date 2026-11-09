@@ -153,6 +153,11 @@ function create({THREE:T,scene}){
  function update(e,game,dt){
   if(disposed||!e)return;dt=clamp(finite(dt),0,.1);
   const hit=finite(e.hitReactionTimer),parry=finite(e.parryStaggerTimer),newReaction=hit>reactionTimer+.000001||parry>parryTimer+.000001;
+  // The authoritative hit timer also updates on the first hit-stop frame;
+  // unchanged frozen frames retain this pulse without advancing a local clock.
+  const flash=clamp(finite(e.hitFlash)/.09,0,1);
+  kit.material.emissive.set(flash>0?'#ffffff':parry>0?'#5a7a88':'#000000');
+  kit.material.emissiveIntensity=flash>0?.9*smooth(flash):.35*smooth(parry/.25);
   base.position.set(finite(e.x),finite(e.y),finite(e.z));
   base.visible=e.spawned!==false&&(!e.dead||finite(e.deadAge)<1.05);
   // A fixed simulation step can reach contact immediately before hitstop.
@@ -231,7 +236,6 @@ function create({THREE:T,scene}){
   capePitch=damp(capePitch,clothTarget,7,dt);capeYaw=damp(capeYaw,-pose.cy*.30-clamp(angle(yaw,heading),-.30,.30),5,dt);
   capeMidPitch=damp(capeMidPitch,capePitch*.78,5,dt);capeEndPitch=damp(capeEndPitch,capeMidPitch*.80,4,dt);
   capeTop.rotation.set(capePitch,capeYaw,Math.sin(clock*1.9)*.012);capeMid.rotation.set(capeMidPitch,0,Math.sin(clock*1.9-.65)*.018);capeEnd.rotation.set(capeEndPitch,0,Math.sin(clock*1.9-1.25)*.025);
-  kit.material.color.set(parry>0?'#c5d6dc':finite(e.hitFlash)>0?'#edc4aa':'#ffffff');
   const elapsed=finite(e.strikeElapsed),duration=Math.max(.01,finite(e.strikeDuration,.42)),contact=finite(e.strikeContact,.14);
   bladeSegment.visible=base.visible;bladeSegment.attackId=e.strikeId||0;bladeSegment.kind=e.attackKind||'slash';bladeSegment.moveId=moveId;bladeSegment.progress=clamp(elapsed/duration,0,1);
   bladeSegment.active=!!(base.visible&&!e.dead&&state==='strike'&&!parry&&elapsed>=Math.max(0,contact-.085)&&elapsed<=Math.min(duration,contact+.14));
