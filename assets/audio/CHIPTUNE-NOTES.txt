@@ -1,0 +1,65 @@
+HAT AND CAT - ORIGINAL 8-BIT SCORE (v1)
+
+All four compositions and their note sequences were created for this game.
+No existing recording, melody, MIDI, soundfont, sample pack, or old MP3
+was used as musical input. These are new chiptune scores, not bitcrushed
+versions of the former background music.
+
+TRACKS / exact arrangement grid
+
+gate-chip-v1.mp3 - Lanterns at the Iron Gate
+  116 quarter notes/minute; 4/4; D minor.
+  24 bars; 49.655172 seconds on the composition grid.
+  Form: A (8) / B (8) / A variation (8).
+
+tide-chip-v1.mp3 - The Pump Below the Tide
+  102 quarter notes/minute; 4/4; G Dorian with D7 cadences.
+  24 bars; 56.470588 seconds on the composition grid.
+  Form: A (8) / B (8) / A variation (8).
+
+spire-chip-v1.mp3 - Waltz of the Astral Spire
+  132 quarter notes/minute; 3/4; D major / Lydian color.
+  36 bars; 49.090909 seconds on the composition grid.
+  Form: A (12) / B (12) / A variation (12).
+
+boss-chip-v1.mp3 - The Clockwork Pursuer
+  150 quarter notes/minute; 4/4; E minor.
+  32 bars; 51.200000 seconds on the composition grid.
+  Form: A (8) / B (8) / A variation (8) / B variation (8).
+
+CHARACTER
+Gate: driving D-minor adventure, dotted rests, alternating root/fifth bass.
+Tide: round 50%-pulse melody, syncopated bass, offbeat bubbling arpeggios.
+Spire: lighter 3/4 rising waltz, Lydian color, spacious melody and percussion.
+Boss: urgent E-minor pursuit, repeated eighth-note bass, sixteenth arpeggios.
+
+SYNTHESIS
+Four musical channels maximum: one duty-cycle pulse lead, one rapid pulse
+arpeggio voice, one 32-step triangle bass, and one 15-bit LFSR noise drum.
+The drum channel alternates kick/snare/hat/tick events without overlap.
+Pulse envelopes use 16 volume levels. Final mix uses an 8-bit amplitude
+grid and a gentle 7-tap circular FIR to tame pulse edges. No lush synth pads,
+sampled instruments, extra chord layers, long reverb, or bitcrushed old music.
+32,000 Hz stereo; MP3 encoding at 128 kb/s. MP3 is lossy, so the transported
+waveform is an approximation of the quantized original synthesis.
+All songs begin at cue 0 and finish a whole musical phrase for looping.
+MP3 encoder delay/padding metadata is written; browser gap handling varies.
+
+RUNTIME
+audio.setLevel(0/1/2) selects gate/tide/spire with cached unchanged calls.
+Explore and normal combat share the stage theme; combat modestly raises gain.
+Boss uses its own dedicated track. Stage changes crossfade existing media.
+Existing sound effects, user mute switches and recorder capture bus remain.
+
+REPRODUCTION
+python tools/compose-chiptune-v6.py --output assets/audio --ffmpeg /path/to/ffmpeg
+Python requires numpy; FFmpeg requires libmp3lame. Songs render sequentially.
+The command synthesizes/encodes only; it does not play audio or open the game.
+
+VERIFICATION LIMIT
+Per the user's instruction, no audio audition, game/browser launch, automated
+test, or quality-test pass was performed for these tracks. Render/encoding
+completion is not a claim of audible verification.
+
+Legacy music/attribution files may remain in the working source directory.
+They are not inputs to these compositions and are not referenced by audio.js.

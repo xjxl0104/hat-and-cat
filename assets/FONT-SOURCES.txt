@@ -1,0 +1,19 @@
+Downloaded 2026-11-07 from official upstream sources. Font binaries are unmodified.
+
+fusion-pixel.woff2
+Project: Fusion Pixel Font, Copyright (c) 2022, TakWolf.
+Official release (latest at download): https://github.com/TakWolf/fusion-pixel-font/releases/tag/2026.10.25
+Archive: https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.10.25/fusion-pixel-font-12px-proportional-otf.woff2-v2026.10.25.zip
+Archive member: fusion-pixel-12px-proportional-zh_hans.otf.woff2
+Variant: 12px proportional, Simplified Chinese (zh_hans), OTF WOFF2.
+License: SIL Open Font License 1.1. Full upstream license retained as Fusion-Pixel-OFL.txt.
+All bundled upstream component license files retained under Fusion-Pixel-LICENSES/.
+
+vt323.ttf
+Project: VT323, Copyright 2011, The VT323 Project Authors (peter.hull@oikoi.com).
+Official source: https://github.com/google/fonts/tree/main/ofl/vt323
+Binary: https://raw.githubusercontent.com/google/fonts/main/ofl/vt323/VT323-Regular.ttf
+License source: https://raw.githubusercontent.com/google/fonts/main/ofl/vt323/OFL.txt
+License: SIL Open Font License 1.1. Full upstream license retained as VT323-OFL.txt.
+
+Keep these license and copyright files with redistributed font binaries.

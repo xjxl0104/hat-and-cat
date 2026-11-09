@@ -1,0 +1,270 @@
+{
+  "author": "Kenney",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "conversion": "Original triangulated OBJ geometry; bottom centered; original colors sampled/baked as RGB vertex colors. Runtime uses a muted custom material palette.",
+  "packs": [
+    {
+      "name": "castle-kit",
+      "url": "https://kenney.nl/assets/castle-kit",
+      "downloadEndpoint": "https://kenney.nl/download-link/6173736574732f636173746c652d6b6974",
+      "archiveSha256": "921f3f73927bb23106cae34bc21d5ab4b033a9fc120475e96f714a406e3169df"
+    },
+    {
+      "name": "nature-kit",
+      "url": "https://kenney.nl/assets/nature-kit",
+      "downloadEndpoint": "https://kenney.nl/download-link/6173736574732f6e61747572652d6b6974",
+      "archiveSha256": "fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d"
+    }
+  ],
+  "models": [
+    {
+      "id": "castle-kit/wall-half",
+      "sourceObjSha256": "bb55759e1cd75c05a9bc9e954bfce31e62f46a6ab859e533fe3bd04b0720d5f1",
+      "sourceMtlSha256": "45a6736aa344a0c7e286b9c43c6a48f25b6a2f78d8c5949e430c3b4a93b4e060",
+      "vertices": 756,
+      "triangles": 252,
+      "size": [
+        1,
+        1.31,
+        1
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "castle-kit/wall-pillar",
+      "sourceObjSha256": "5adeaaca365fff41c62a5bd73f8219223ddaad608009ece565b309ba39af4038",
+      "sourceMtlSha256": "45a6736aa344a0c7e286b9c43c6a48f25b6a2f78d8c5949e430c3b4a93b4e060",
+      "vertices": 1116,
+      "triangles": 372,
+      "size": [
+        1,
+        1.31,
+        1
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "castle-kit/wall",
+      "sourceObjSha256": "94c1939db13317c436f405b9a7a36d32d79356958e60f98036a9ad4740c57dec",
+      "sourceMtlSha256": "45a6736aa344a0c7e286b9c43c6a48f25b6a2f78d8c5949e430c3b4a93b4e060",
+      "vertices": 1068,
+      "triangles": 356,
+      "size": [
+        1,
+        1.31,
+        1
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "castle-kit/tower-square-mid-windows",
+      "sourceObjSha256": "640f21944959b89b4dbe9cc0257b927adcf7ab9813551da47a210531a2eddbb2",
+      "sourceMtlSha256": "45a6736aa344a0c7e286b9c43c6a48f25b6a2f78d8c5949e430c3b4a93b4e060",
+      "vertices": 2184,
+      "triangles": 728,
+      "size": [
+        0.93,
+        1.01,
+        0.93
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "castle-kit/tower-square-top",
+      "sourceObjSha256": "25e265b91f73be81252ef8818e17701b909e5835753a8beecf938cecc9d8d127",
+      "sourceMtlSha256": "45a6736aa344a0c7e286b9c43c6a48f25b6a2f78d8c5949e430c3b4a93b4e060",
+      "vertices": 888,
+      "triangles": 296,
+      "size": [
+        1,
+        0.3,
+        1
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "castle-kit/tower-square-arch",
+      "sourceObjSha256": "8cec63ce4e1375a46d2d6306706a53e96da191cef2934525d666ff4ffb46cb3c",
+      "sourceMtlSha256": "45a6736aa344a0c7e286b9c43c6a48f25b6a2f78d8c5949e430c3b4a93b4e060",
+      "vertices": 1848,
+      "triangles": 616,
+      "size": [
+        0.93,
+        1.01,
+        0.93
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "castle-kit/tower-square-base-border",
+      "sourceObjSha256": "c2d20efbe3af3e74994dce50f18dc1402075bcc1d8acf1a3e7d30c5e2de04c74",
+      "sourceMtlSha256": "45a6736aa344a0c7e286b9c43c6a48f25b6a2f78d8c5949e430c3b4a93b4e060",
+      "vertices": 120,
+      "triangles": 40,
+      "size": [
+        1,
+        0.45,
+        1
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "castle-kit/flag-banner-long",
+      "sourceObjSha256": "11fd8a33d90e85b930808c3d90a305a601927e7b0df6ac3d0ad7dc7ca723999d",
+      "sourceMtlSha256": "45a6736aa344a0c7e286b9c43c6a48f25b6a2f78d8c5949e430c3b4a93b4e060",
+      "vertices": 408,
+      "triangles": 136,
+      "size": [
+        0.04,
+        2.17,
+        0.63
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/tree_oak_fall",
+      "sourceObjSha256": "66f384c6e705c8fb01d820d5f42db5f7195ea366ade8d528a0544604251b7868",
+      "sourceMtlSha256": "8eca40ec87885460b39395090610131130fdba1f4b4794407628a0ccfcff8e4e",
+      "vertices": 588,
+      "triangles": 196,
+      "size": [
+        0.64055,
+        1.22624,
+        0.73965
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/tree_detailed_dark",
+      "sourceObjSha256": "291dcd3cb1c4f53c2782d6b462a0d86ae9566550316704082d56b1caf453ba5a",
+      "sourceMtlSha256": "04c8828b9552e2d55f4a93a0487e21dcf14c6794dde792a0d00d5d08e9af0ede",
+      "vertices": 1206,
+      "triangles": 402,
+      "size": [
+        0.84712,
+        1.33242,
+        0.7616
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/tree_pineTallA_detailed",
+      "sourceObjSha256": "c92abb1eaf23ac94a09ee5f5f9a1adfc183c561c8c76ae3435ac2bbdf254070e",
+      "sourceMtlSha256": "933a40d74e752aa7baf489cd76a1ca36c7fffe95f2c16410772c715c4e102ec6",
+      "vertices": 402,
+      "triangles": 134,
+      "size": [
+        0.38627,
+        1.52961,
+        0.39195
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/grass_large",
+      "sourceObjSha256": "8a7cd258fa054bb6d3db5ecd05b746c002a51c8d0542757f3b6e1079df34567f",
+      "sourceMtlSha256": "b186368ad09ddb6673f90f63c45ecac3f793b36fe14f96bd62e6d44922e7e874",
+      "vertices": 672,
+      "triangles": 224,
+      "size": [
+        0.409,
+        0.254,
+        0.40789
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/plant_bushSmall",
+      "sourceObjSha256": "f07e606f1937469330e9cf9fecccccf6c619f632b91e2f3076dd52d15366de39",
+      "sourceMtlSha256": "b186368ad09ddb6673f90f63c45ecac3f793b36fe14f96bd62e6d44922e7e874",
+      "vertices": 48,
+      "triangles": 16,
+      "size": [
+        0.38298,
+        0.20729,
+        0.33634
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/rock_largeA",
+      "sourceObjSha256": "60e4896f0bb0077ce820aa842e48a4f50d089a0d39e38d56cbf1bd7286882136",
+      "sourceMtlSha256": "b1f406513a297dd69c38653fd9b9de390123ff45242be9bf204f775d9e88c98c",
+      "vertices": 240,
+      "triangles": 80,
+      "size": [
+        0.78491,
+        0.25978,
+        1.01546
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/rock_largeC",
+      "sourceObjSha256": "e96d6790800163ab57547538b0500821693ea9c5d99a9664ab45e56390366c70",
+      "sourceMtlSha256": "b1f406513a297dd69c38653fd9b9de390123ff45242be9bf204f775d9e88c98c",
+      "vertices": 216,
+      "triangles": 72,
+      "size": [
+        1.06441,
+        0.32111,
+        1.01566
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/rock_tallA",
+      "sourceObjSha256": "5f6b182753c6f4f54e4b507d4b6bf9ab074775765a25a2a74c88fa7099f98374",
+      "sourceMtlSha256": "db75535695bc97d26e50a03f55306f04938b123f0fc3622cac4ac15e5ef27ab8",
+      "vertices": 408,
+      "triangles": 136,
+      "size": [
+        0.98307,
+        0.99593,
+        0.68321
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/cliff_rock",
+      "sourceObjSha256": "9786a3667520e5f8d92aaec4947e8648b07d3cbfcc668c7ef979e43de99531a6",
+      "sourceMtlSha256": "438c2941f34b34221eb19dc9757d5b6135c8843e91dff48cb8c715d9a72e3888",
+      "vertices": 96,
+      "triangles": 32,
+      "size": [
+        1,
+        1,
+        0.1685
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/statue_columnDamaged",
+      "sourceObjSha256": "146eded52a5d35ae2d39de801219431837e06709111ea89d355e54f23a7b31de",
+      "sourceMtlSha256": "61488034bc074c69ae513b640def250b23a3a1690fc2afa4c3d82ed1e792a277",
+      "vertices": 324,
+      "triangles": 108,
+      "size": [
+        0.3,
+        0.7,
+        0.3
+      ],
+      "usedIn": "src/wilds-world.js"
+    },
+    {
+      "id": "nature-kit/hanging_moss",
+      "sourceObjSha256": "9c9101ca76250531bf4f2b2584ea494125de98526b6fa455d0c17d3fea48eded",
+      "sourceMtlSha256": "b186368ad09ddb6673f90f63c45ecac3f793b36fe14f96bd62e6d44922e7e874",
+      "vertices": 156,
+      "triangles": 52,
+      "size": [
+        0.15983,
+        0.47848,
+        0.035
+      ],
+      "usedIn": "src/wilds-world.js"
+    }
+  ],
+  "generatedSha256": "aa715d79f23f9651e4e34f6b84d4956126c7ffa1bca07715620f486edade7d05"
+}

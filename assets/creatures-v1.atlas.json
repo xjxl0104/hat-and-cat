@@ -1,0 +1,274 @@
+{
+  "image": "creatures-v1.png",
+  "width": 1448,
+  "height": 1086,
+  "columns": 4,
+  "rows": 3,
+  "cellWidth": 362,
+  "cellHeight": 362,
+  "nativeFacing": "left",
+  "alphaThresholdUsed": 128,
+  "fullyTransparentPixels": 858700,
+  "sourceSha256": "707dff49ec89fe05f77dabab6f2aaea4f73b8e9fb2b9814bdd0232663f2ebbd7",
+  "notes": [
+    "Original generated PNG, no pixel edits or cropping.",
+    "Bounds are inclusive, local to each source cell.",
+    "Archer anchor is measured just below the boot sole.",
+    "Bat/swimmer center anchors are runtime recommendations, not measured feet; preserve the pose motion instead of independently grounding every wing/tail bounding box."
+  ],
+  "frames": [
+    {
+      "index": 0,
+      "name": "archer.idle",
+      "source": {
+        "x": 0,
+        "y": 0,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 38,
+        "minY": 44,
+        "maxX": 315,
+        "maxY": 336
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 337,
+        "kind": "feet"
+      }
+    },
+    {
+      "index": 1,
+      "name": "archer.walk",
+      "source": {
+        "x": 362,
+        "y": 0,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 35,
+        "minY": 48,
+        "maxX": 328,
+        "maxY": 336
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 337,
+        "kind": "feet"
+      }
+    },
+    {
+      "index": 2,
+      "name": "archer.aim",
+      "source": {
+        "x": 724,
+        "y": 0,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 16,
+        "minY": 44,
+        "maxX": 330,
+        "maxY": 336
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 337,
+        "kind": "feet"
+      }
+    },
+    {
+      "index": 3,
+      "name": "archer.release",
+      "source": {
+        "x": 1086,
+        "y": 0,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 40,
+        "minY": 44,
+        "maxX": 331,
+        "maxY": 336
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 337,
+        "kind": "feet"
+      }
+    },
+    {
+      "index": 4,
+      "name": "bat.wings-up",
+      "source": {
+        "x": 0,
+        "y": 362,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 68,
+        "minY": 39,
+        "maxX": 313,
+        "maxY": 277
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 181,
+        "kind": "flight-or-water-center"
+      }
+    },
+    {
+      "index": 5,
+      "name": "bat.wings-out",
+      "source": {
+        "x": 362,
+        "y": 362,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 12,
+        "minY": 98,
+        "maxX": 351,
+        "maxY": 255
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 181,
+        "kind": "flight-or-water-center"
+      }
+    },
+    {
+      "index": 6,
+      "name": "bat.wings-down",
+      "source": {
+        "x": 724,
+        "y": 362,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 73,
+        "minY": 103,
+        "maxX": 291,
+        "maxY": 312
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 181,
+        "kind": "flight-or-water-center"
+      }
+    },
+    {
+      "index": 7,
+      "name": "bat.dive",
+      "source": {
+        "x": 1086,
+        "y": 362,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 56,
+        "minY": 86,
+        "maxX": 313,
+        "maxY": 277
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 181,
+        "kind": "flight-or-water-center"
+      }
+    },
+    {
+      "index": 8,
+      "name": "swimmer.coil",
+      "source": {
+        "x": 0,
+        "y": 724,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 47,
+        "minY": 72,
+        "maxX": 287,
+        "maxY": 296
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 181,
+        "kind": "flight-or-water-center"
+      }
+    },
+    {
+      "index": 9,
+      "name": "swimmer.extend",
+      "source": {
+        "x": 362,
+        "y": 724,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 17,
+        "minY": 99,
+        "maxX": 335,
+        "maxY": 233
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 181,
+        "kind": "flight-or-water-center"
+      }
+    },
+    {
+      "index": 10,
+      "name": "swimmer.emerge",
+      "source": {
+        "x": 724,
+        "y": 724,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 40,
+        "minY": 53,
+        "maxX": 323,
+        "maxY": 296
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 181,
+        "kind": "flight-or-water-center"
+      }
+    },
+    {
+      "index": 11,
+      "name": "swimmer.spit",
+      "source": {
+        "x": 1086,
+        "y": 724,
+        "width": 362,
+        "height": 362
+      },
+      "visibleBounds": {
+        "minX": 30,
+        "minY": 79,
+        "maxX": 323,
+        "maxY": 288
+      },
+      "suggestedAnchor": {
+        "x": 181,
+        "y": 181,
+        "kind": "flight-or-water-center"
+      }
+    }
+  ]
+}
+
