@@ -158,7 +158,7 @@ function create({THREE:T,scene}){
   pelvis.position.set(0,1.02-pose.drop-.15*held-.55*sit,0);
   chest.rotation.set(pose.cp+hitZ*.12*kick+.18*held-.12*sit,pose.cy,-hitX*.08*kick);
   const nod=e.state==='idle'||e.state==='chase'?Math.sin(clock*2.2+.6)*.04:0;
-  head.rotation.set(-.08*held+nod+.1*kick-.1*sit,Math.sin(clock*.9)*.06*(1-sit),hitX*.07*kick+Math.sin(clock*2)*.1*sit);
+  head.rotation.set(-.08*held+nod+.1*kick-.1*sit,Math.sin(clock*.9)*.06*(1-sit)-pose.cy*.8,hitX*.07*kick+Math.sin(clock*2)*.1*sit);
   // Arms are simple pitch/roll joints; walking swings them opposite the legs.
   const swing=Math.sin(phase)*.55*walk;
   right.arm.rotation.set(pose.rx-swing-2.4*sit+wave*.35,0,pose.rz-.45*sit);right.forearm.rotation.set(pose.re,0,0);

@@ -28,7 +28,14 @@ root.HatWilds={
   {id:'meadow-cover',x:-4,z:16,w:3.4,d:1.3,height:.8,walkable:true,kind:'low-wall'},
   {id:'west-tree',x:-24,z:11,w:1.5,d:1.5,height:6,kind:'tree'},
   {id:'east-tree',x:23,z:17,w:1.9,d:1.9,height:8,kind:'tree'},
-  {id:'broken-cart',x:8,z:17,w:3,d:1.8,height:1.1,walkable:true,kind:'cart'}
+  {id:'broken-cart',x:8,z:17,w:3,d:1.8,height:1.1,walkable:true,kind:'cart'},
+  // Warm lanterns line the old road beside the paving, never on it.
+  {id:'lantern-camp',x:-14.4,z:18.4,w:.4,d:.4,height:2.3,kind:'lantern'},
+  {id:'lantern-meadow',x:-11.8,z:9.2,w:.4,d:.4,height:2.3,kind:'lantern'},
+  {id:'lantern-bend',x:-3.2,z:4.9,w:.4,d:.4,height:2.3,kind:'lantern'},
+  {id:'lantern-climb',x:-4.7,z:-4.6,w:.4,d:.4,height:2.3,kind:'lantern'},
+  {id:'lantern-gate-w',x:-3.6,z:-11.9,w:.4,d:.4,height:2.3,kind:'lantern'},
+  {id:'lantern-gate-e',x:3.6,z:-11.9,w:.4,d:.4,height:2.3,kind:'lantern'}
  ],
  ponds:[],
  chests:[{id:'relic-ruin',kind:'boon',x:15,y:1.05,z:3,name:'废墟遗物'},{id:'relic-shortcut',kind:'boon',x:-23,y:0,z:-10,name:'守路人的遗物'}],
