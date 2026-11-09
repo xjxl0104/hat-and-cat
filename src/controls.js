@@ -1,7 +1,7 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.HatControls=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 function create({canvas,host=window,document=host.document,getPhase,onStart,onPause,onChoose,onCancel,aimPoint,onLook,onCaptureChange}){
- const keys=new Set(),mouse=new Set(),taps={},map={Space:'jump',KeyQ:'dash',KeyE:'cat',KeyR:'heal',KeyF:'interact',KeyC:'switchWeapon'},expectedCaptureLoss=new Set();
+ const keys=new Set(),mouse=new Set(),taps={},map={Space:'dash',KeyQ:'starfall',KeyF:'interact'},expectedCaptureLoss=new Set();
  const now=()=>host.performance?.now?.()??Date.now();
  let pointerX=null,pointerY=null,pointerInside=false,pointerBlocked=true,wantsCapture=false,locked=false,mode='free',requestSerial=0,pending=false,requestTime=0,ignoreEscapeUntil=0,lastEdgeTime=now(),externalUpdate=false;
  let fallbackX=null,fallbackY=null,dragPointerId=null,seedRelative=true,lockEventTime=0;
@@ -84,7 +84,6 @@ function create({canvas,host=window,document=host.document,getPhase,onStart,onPa
   if(phase!=='play'||e.ctrlKey||e.metaKey||e.altKey)return;
   if(['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
   if(e.repeat)return;
-  if(e.code==='KeyC'){mouse.clear();delete taps.attack;delete taps.secondary;pointerBlocked=true;onCancel?.('weaponSwitch');}
   keys.add(e.code);if(map[e.code])taps[map[e.code]]=true;
  });
  host.addEventListener('keyup',e=>keys.delete(e.code));
@@ -166,7 +165,7 @@ function create({canvas,host=window,document=host.document,getPhase,onStart,onPa
  function update(dt){externalUpdate=true;edgeLook(dt);}
  function read(consume=true){
   if(!externalUpdate)edgeLook();const active=getPhase()==='play';
-  const input={left:active&&(keys.has('KeyA')||keys.has('ArrowLeft')),right:active&&(keys.has('KeyD')||keys.has('ArrowRight')),up:active&&(keys.has('KeyW')||keys.has('ArrowUp')),down:active&&(keys.has('KeyS')||keys.has('ArrowDown')),attack:active&&mouse.has(0),secondary:active&&mouse.has(2),sprint:active&&(keys.has('ShiftLeft')||keys.has('ShiftRight'))};
+  const input={left:active&&(keys.has('KeyA')||keys.has('ArrowLeft')),right:active&&(keys.has('KeyD')||keys.has('ArrowRight')),up:active&&(keys.has('KeyW')||keys.has('ArrowUp')),down:active&&(keys.has('KeyS')||keys.has('ArrowDown')),attack:active&&mouse.has(0),secondary:active&&mouse.has(2)};
   if(consume){if(active)Object.assign(input,taps);for(const key of Object.keys(taps))delete taps[key];}
   const point=aimPoint?.(pointerX,pointerY);
   if(point&&Number.isFinite(point.x)&&Number.isFinite(point.z)){input.aimX=point.x;input.aimZ=point.z;if(Number.isFinite(point.y))input.aimY=point.y;input.aimTargetId=point.targetId??null;}

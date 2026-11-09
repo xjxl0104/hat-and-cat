@@ -2,12 +2,14 @@
 'use strict';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),finite=(v,f=0)=>Number.isFinite(v)?v:f;
 function create({THREE:T,camera,getOccluders=()=>[],getCameraOccluders=getOccluders,targetContact=globalThis.HatGame.projectileTargetContact}){
- const BOOM=4.6,SHOULDER=.82,PIVOT_HEIGHT=1.55,RADIUS=.28,SKIN=.025,MAX_AIM=30,SENSITIVITY=.0024;
+ // High chase camera: the hero sits in the middle of the frame, not off one shoulder.
+ const BOOM=8.2,SHOULDER=0,PIVOT_HEIGHT=1.45,LOOK_UP=1.25,RADIUS=.28,SKIN=.025,MAX_AIM=30,SENSITIVITY=.0024;
  const pivot=new T.Vector3(),forward=new T.Vector3(),right=new T.Vector3(),desired=new T.Vector3(),delta=new T.Vector3(),lookAt=new T.Vector3(),hitPoint=new T.Vector3(),muzzle=new T.Vector3(),aimEnd=new T.Vector3(),aimStart=new T.Vector3(),terrainEnd=new T.Vector3();
- const aimRay=new T.Raycaster(),screenCentre=new T.Vector2(0,0),queryCache=new WeakMap();
- const choices=[{side:SHOULDER,lift:0,bias:0},{side:-SHOULDER,lift:0,bias:.2},{side:0,lift:1.15,bias:.36},{side:SHOULDER,lift:1.15,bias:.42},{side:-SHOULDER,lift:1.15,bias:.5}];
+ const aimRay=new T.Raycaster(),screenCentre=new T.Vector2(0,.04),queryCache=new WeakMap();
+ // When walls cut the boom short, rise over them rather than pushing into the hero's back.
+ const choices=[{side:0,lift:0,bias:0},{side:1,lift:.7,bias:.3},{side:-1,lift:.7,bias:.34},{side:0,lift:2,bias:.4},{side:0,lift:3.8,bias:.55},{side:0,lift:7,bias:.75},{side:0,lift:10.5,bias:.9}];
  const desiredDistance=Math.hypot(BOOM,SHOULDER);
- let yaw=0,pitch=-.12,distance=desiredDistance,obstructed=false,lastView=null,initialized=false,dirty=true,followY=1.55;
+ let yaw=0,pitch=-.36,distance=desiredDistance,obstructed=false,lastView=null,initialized=false,dirty=true,followY=1.55;
  let chosen=0,choiceAge=0,preferredClearAge=0,side=SHOULDER,lift=0;
  function basis(){const c=Math.cos(pitch);forward.set(Math.sin(yaw)*c,Math.sin(pitch),-Math.cos(yaw)*c);right.set(Math.cos(yaw),0,Math.sin(yaw));}
  function terrain(game){return game.wilds?globalThis.HatTerrain:null;}
@@ -113,15 +115,16 @@ function create({THREE:T,camera,getOccluders=()=>[],getCameraOccluders=getOcclud
   // frame; extend gently. No minimum boom can force the camera through cover.
   distance=snap||allowed<distance?allowed:distance+(allowed-distance)*(1-Math.exp(-9*time));
   camera.position.copy(pivot).addScaledVector(delta,distance);
-  lookAt.copy(camera.position).add(forward);camera.lookAt(lookAt);camera.updateMatrixWorld(true);dirty=false;
+  // Aim the lens above the head so the hero sits low in frame and the road ahead stays open.
+  lookAt.copy(pivot);lookAt.y+=LOOK_UP*Math.min(1,distance/desiredDistance);camera.lookAt(lookAt);camera.updateMatrixWorld(true);dirty=false;
  }
  function reset(game){
   const p=game?.player;if(!p)return;
-  const b=game.bounds,boss=game.wilds?.bossEntered?game.enemies.find(e=>e.type==='boss'&&!e.dead):null,cx=boss?boss.x:b?(b.minX+b.maxX)/2:0,cz=boss?boss.z:b?(b.minZ+b.maxZ)/2:0;
+  const b=game.bounds,boss=game.bossActive?game.enemies.find(e=>e.type==='boss'&&!e.dead&&e.state!=='dormant'):null,cx=boss?boss.x:b?(b.minX+b.maxX)/2:0,cz=boss?boss.z:b?(b.minZ+b.maxZ)/2:0;
   yaw=Math.hypot(cx-p.x,cz-p.z)>.01?Math.atan2(cx-p.x,-(cz-p.z)):Math.atan2(finite(p.aimDirX),-finite(p.aimDirZ,-1));
-  pitch=-.12;distance=desiredDistance;chosen=0;choiceAge=0;preferredClearAge=0;side=SHOULDER;lift=0;initialized=true;place(game,0,true);
+  pitch=-.36;distance=desiredDistance;chosen=0;choiceAge=0;preferredClearAge=0;side=SHOULDER;lift=0;initialized=true;place(game,0,true);
  }
- function look(dx,dy){yaw+=finite(dx)*SENSITIVITY;yaw=Math.atan2(Math.sin(yaw),Math.cos(yaw));pitch=clamp(pitch-finite(dy)*SENSITIVITY,-.75,.50);dirty=true;}
+ function look(dx,dy){yaw+=finite(dx)*SENSITIVITY;yaw=Math.atan2(Math.sin(yaw),Math.cos(yaw));pitch=clamp(pitch-finite(dy)*SENSITIVITY,-.95,.12);dirty=true;}
  function update(view,dt){
   if(!initialized){reset(view);return;}
   // An input refresh changes look, not the displayed interpolated player pose.

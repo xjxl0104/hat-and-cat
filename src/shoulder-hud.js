@@ -19,7 +19,7 @@ function create({THREE:T,camera}){
    candidates.push({angle,distance,urgent,behind:local.z>=0,unblockable:urgent&&!!e.unblockable});
   }
   candidates.sort((a,b)=>Number(b.urgent)-Number(a.urgent)||a.distance-b.distance);
-  markers.forEach((el,i)=>{const t=candidates[i];el.hidden=!t;if(!t)return;el.style.left=(50+Math.sin(t.angle)*43)+'%';el.style.top=(50-Math.cos(t.angle)*37)+'%';el.classList.toggle('urgent',t.urgent);el.classList.toggle('unblockable',t.unblockable);el.firstElementChild.style.transform=t.unblockable?'none':'rotate('+t.angle+'rad)';el.lastElementChild.textContent=t.unblockable?'不可格挡':t.urgent?'蓄势':t.behind?'身后':'';});
+  markers.forEach((el,i)=>{const t=candidates[i];el.hidden=!t;if(!t)return;el.style.left=(50+Math.sin(t.angle)*43)+'%';el.style.top=(50-Math.cos(t.angle)*37)+'%';el.classList.toggle('urgent',t.urgent);el.classList.toggle('unblockable',t.unblockable);el.firstElementChild.style.transform=t.unblockable?'none':'rotate('+t.angle+'rad)';el.lastElementChild.textContent=t.unblockable?'快翻滚':t.urgent?'蓄势':t.behind?'身后':'';});
  }
  return{update};
 }

@@ -268,7 +268,7 @@ function create({THREE:T,scene,camera}){
   // Death freezes simulation time in the shell. Enter the collapse even on a
   // zero-delta draw, keeping the engine's feet Y instead of snapping to soil.
   deathAmount=dead?(dt>0?Math.min(1,deathAmount+dt*5):1):0;
-  if(!dead&&!drinking&&p.castTimer>0&&(p.castKind==='nova'||p.castKind==='cat')){
+  if(!dead&&!drinking&&p.castTimer>0&&(p.castKind==='nova'||p.castKind==='cat'||p.castKind==='magic')){
    if(castKind!==p.castKind||castLeft<=0)castYaw=directionYaw(p.castContext?.dirX??p.aimDirX,p.castContext?.dirZ??p.aimDirZ,yaw);
    castKind=p.castKind;castLeft=Math.max(castLeft,p.castTimer);
   }

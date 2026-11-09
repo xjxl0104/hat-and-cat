@@ -2,7 +2,7 @@
 function create(){
  const $=id=>document.getElementById(id),canvas=$('room-map'),ctx=canvas.getContext('2d');let arrivalTimer=0;
  function zone(s){const p=s.player;if(p.z<-13&&Math.abs(p.x)<10)return '失誓礼拜堂';if(p.x<-12&&p.z<-4)return '旧巡礼小径';if(p.x>9&&p.z<11)return '半埋遗迹';if(p.z>14)return '营火坡地';return '残石古道';}
- function objective(s){if(s.wilds.finalDefeated)return '他认输啦 · 去祭坛吹灭生日蜡烛';if(s.wilds.finalEntered)return '最终 Boss · 格挡棒棒糖再反击 · 红叉招式要跳开或闪避';if(s.wilds.bossDefeated)return '守誓已终 · 走向礼拜堂尽头的余光';if(s.wilds.bossEntered)return '避开连招 · 低位横扫可跳过 · 收招时反击';if(s.wilds.deathDrop)return '取回遗失的余烬，或先回营火休整';if(s.wilds.shortcutOpen)return '近路已开启 · 前往礼拜堂挑战守誓者';if(s.player.z>10)return '循石路前行 · 东侧遗迹藏着旧日遗物';return '寻找近路与遗物 · 礼拜堂在北方';}
+ function objective(s){if(s.wilds.finalDefeated)return '他认输啦 · 去祭坛吹灭生日蜡烛';if(s.wilds.finalEntered)return '最终 Boss · 翻滚躲开棒棒糖，再用魔法反击';if(s.wilds.bossDefeated)return '守誓已终 · 走向礼拜堂尽头的余光';if(s.wilds.bossEntered)return '避开连招 · 翻滚躲闪 · 收招时反击';if(s.wilds.deathDrop)return '取回遗失的余烬，或先回营火休整';if(s.wilds.shortcutOpen)return '近路已开启 · 前往礼拜堂挑战守誓者';if(s.player.z>10)return '循石路前行 · 东侧遗迹藏着旧日遗物';return '寻找近路与遗物 · 礼拜堂在北方';}
  function update(s,dt=0){
   const w=canvas.width,h=canvas.height,b=s.bounds,X=x=>7+(x-b.minX)/(b.maxX-b.minX)*(w-14),Y=z=>7+(z-b.minZ)/(b.maxZ-b.minZ)*(h-14);ctx.clearRect(0,0,w,h);ctx.fillStyle='#202b22';ctx.fillRect(0,0,w,h);
   const terrain=root.HatTerrain,palette=['#24322d','#2e3b31','#3a4538','#47503e','#555b46','#656550','#72725b'];

@@ -4,10 +4,11 @@ These are actual model sources downloaded from the original author, not procedur
 
 - Castle Kit 2.0: https://kenney.nl/assets/castle-kit
 - Nature Kit 2.1: https://kenney.nl/assets/nature-kit
+- Fantasy Town Kit 2.0: https://kenney.nl/assets/fantasy-town-kit (added 2026-11-09 for the map detail pass)
 - Author: Kenney, https://kenney.nl
 - License: Creative Commons Zero / CC0 1.0, https://creativecommons.org/publicdomain/zero/1.0/
 
-`selected/castle-kit/License.txt` and `selected/nature-kit/License.txt` preserve the packs' original license notices. Selected OBJ/MTL files and Castle Kit's original color atlas are retained unchanged. `manifest.json` records the official source URLs, official download endpoints, SHA-256 hashes of both original ZIP downloads, hashes of each selected OBJ and MTL, and the generated library hash.
+`selected/castle-kit/License.txt`, `selected/nature-kit/License.txt` and `selected/fantasy-town-kit/License.txt` preserve the packs' original license notices. Selected OBJ/MTL files and Castle Kit's original color atlas are retained unchanged. `manifest.json` records the official source URLs, official download endpoints, SHA-256 hashes of both original ZIP downloads, hashes of each selected OBJ and MTL, and the generated library hash.
 
 The scene uses all 19 selected models: eight castle wall, pillar, window, arch, tower and banner models; eleven nature tree, grass, bush, rock, cliff, column and moss models. Their combined source geometry contains 4,248 triangles. Repeated models are instanced. Decorative trees remain out of camera ray lists; nearby solid border geology is camera-only. Gameplay solids always come from `HatWilds` / engine obstacles.
 

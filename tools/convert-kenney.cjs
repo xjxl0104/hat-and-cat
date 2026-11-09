@@ -4,7 +4,12 @@ const base=path.resolve(__dirname,'..'),assetRoot=path.join(base,'assets','kenne
 const previousManifest=fs.existsSync(path.join(assetRoot,'manifest.json'))?JSON.parse(fs.readFileSync(path.join(assetRoot,'manifest.json'),'utf8')):null;
 const selected={
  'castle-kit':['wall-half','wall-pillar','wall','tower-square-mid-windows','tower-square-top','tower-square-arch','tower-square-base-border','flag-banner-long'],
- 'nature-kit':['tree_oak_fall','tree_detailed_dark','tree_pineTallA_detailed','grass_large','plant_bushSmall','rock_largeA','rock_largeC','rock_tallA','cliff_rock','statue_columnDamaged','hanging_moss']
+ 'nature-kit':['tree_oak_fall','tree_detailed_dark','tree_pineTallA_detailed','grass_large','plant_bushSmall','rock_largeA','rock_largeC','rock_tallA','cliff_rock','statue_columnDamaged','hanging_moss',
+  // Birthday detail pass: ground cover, props and varied trees.
+  'flower_purpleA','flower_redA','flower_yellowA','flower_purpleB','flower_redB','flower_yellowB','mushroom_redGroup','mushroom_tanGroup','mushroom_redTall',
+  'rock_smallA','rock_smallC','rock_smallFlatA','stump_roundDetailed','stump_old','log','log_stack','plant_bushDetailed','plant_bushLarge','plant_flatTall','grass_leafs',
+  'tree_default','tree_fat_fall','tree_oak','tree_cone_fall','tree_pineRoundA','tree_small_fall','tent_detailedOpen','sign','pot_large','fence_simple','statue_head','statue_obelisk','crop_pumpkin','path_stoneCircle'],
+ 'fantasy-town-kit':['lantern','cart','stall-red','banner-red','fountain-round-detail','hedge','wall-broken','rock-wide','tree-crooked','fence-broken','windmill','wheel','stairs-stone']
 };
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
 function png(file){
@@ -37,10 +42,10 @@ function convert(obj,mtl){
 }
 const models={},manifest={author:'Kenney',license:'CC0-1.0',licenseUrl:'https://creativecommons.org/publicdomain/zero/1.0/',conversion:'Original triangulated OBJ geometry; bottom centered; original colors sampled/baked as RGB vertex colors. Runtime uses a muted custom material palette.',packs:[],models:[]};
 for(const [pack,names] of Object.entries(selected)){
- const packDir=path.join(assetRoot,pack),fullSource=path.join(packDir,'Models','OBJ format'),archive=path.join(assetRoot,pack+'.zip'),retained=path.join(assetRoot,'selected',pack),source=fs.existsSync(path.join(retained,names[0]+'.obj'))?retained:fullSource;fs.mkdirSync(retained,{recursive:true});if(source!==retained)fs.copyFileSync(path.join(packDir,'License.txt'),path.join(retained,'License.txt'));
+ const packDir=path.join(assetRoot,pack),fullSource=path.join(packDir,'Models','OBJ format'),archive=path.join(assetRoot,pack+'.zip'),retained=path.join(assetRoot,'selected',pack),pick=name=>fs.existsSync(path.join(retained,name+'.obj'))?retained:fullSource;fs.mkdirSync(retained,{recursive:true});if(fs.existsSync(path.join(packDir,'License.txt')))fs.copyFileSync(path.join(packDir,'License.txt'),path.join(retained,'License.txt'));
  manifest.packs.push({name:pack,url:'https://kenney.nl/assets/'+pack,downloadEndpoint:'https://kenney.nl/download-link/'+Buffer.from('assets/'+pack).toString('hex'),archiveSha256:fs.existsSync(archive)?sha(fs.readFileSync(archive)):previousManifest?.packs.find(p=>p.name===pack)?.archiveSha256});
- for(const name of names){const obj=path.join(source,name+'.obj'),mtl=path.join(source,name+'.mtl'),id=pack+'/'+name;models[id]=convert(obj,fs.readFileSync(mtl,'utf8'));if(source!==retained)for(const ext of ['obj','mtl'])fs.copyFileSync(path.join(source,name+'.'+ext),path.join(retained,name+'.'+ext));manifest.models.push({id,sourceObjSha256:sha(fs.readFileSync(obj)),sourceMtlSha256:sha(fs.readFileSync(mtl)),vertices:models[id].positions.length/3,triangles:models[id].positions.length/9,size:models[id].size,usedIn:'src/wilds-world.js'});}
- const tex=path.join(source,'Textures','colormap.png');if(source!==retained&&fs.existsSync(tex)){fs.mkdirSync(path.join(retained,'Textures'),{recursive:true});fs.copyFileSync(tex,path.join(retained,'Textures','colormap.png'));}
+ for(const name of names){const source=pick(name),obj=path.join(source,name+'.obj'),mtl=path.join(source,name+'.mtl'),id=pack+'/'+name;models[id]=convert(obj,fs.readFileSync(mtl,'utf8'));if(source!==retained)for(const ext of ['obj','mtl'])fs.copyFileSync(path.join(source,name+'.'+ext),path.join(retained,name+'.'+ext));manifest.models.push({id,sourceObjSha256:sha(fs.readFileSync(obj)),sourceMtlSha256:sha(fs.readFileSync(mtl)),vertices:models[id].positions.length/3,triangles:models[id].positions.length/9,size:models[id].size,usedIn:'src/wilds-world.js'});}
+ const tex=path.join(fullSource,'Textures','colormap.png');if(fs.existsSync(tex)){fs.mkdirSync(path.join(retained,'Textures'),{recursive:true});fs.copyFileSync(tex,path.join(retained,'Textures','colormap.png'));}
 }
 const output="/* Kenney CC0 geometry; see assets/kenney/manifest.json and retained licenses. */\n(function(root){'use strict';root.HatArtAssets="+JSON.stringify(models)+";})(typeof globalThis!=='undefined'?globalThis:this);\n";
 fs.writeFileSync(path.join(base,'src','asset-library.js'),output);manifest.generatedSha256=sha(Buffer.from(output));fs.writeFileSync(path.join(assetRoot,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');

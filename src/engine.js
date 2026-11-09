@@ -164,7 +164,7 @@
       encounter:{index:0,number:0,total:1,phase:'exploration',remaining:0,activeCount:0,enemiesRemaining:area.enemies.length,cleared:0},
       levelKills:0,requiredKills:area.enemies.length,projectiles:[],areaEffects:[],pendingChest:null,treasure:null,upgradeChoices:[],reactionQueue:[],reactionCounts:{},hitKeys:{},cleanupAt:0,
       doors:[],roomSnapshots:{},pendingRoomTransition:null,roomArrival:{until:0,blockedDoorId:null},phase:'ready',time:0,skills:{blade:1,bolt:1,cat:1,vitality:1},
-      perks:[],boonCount:0,skillCooldowns:{bolt:0,nova:0},catCooldown:0,events:[],kills:0,coins:0,comboHits:0,comboTimeout:0,hitStop:0,
+      perks:[],boonCount:0,skillCooldowns:{bolt:0,nova:0,magic:0,starfall:0},catCooldown:0,autoLatch:'camp',autoHealAt:0,events:[],kills:0,coins:0,comboHits:0,comboTimeout:0,hitStop:0,
       eventSerial:0,actionSerial:0,projectileSerial:0,areaSerial:0,reactionSerial:0,diagnostics:{reactionOverflow:0},inputLatch:{},frozenInput:null,impactFrozen:false,hitStopActions:{}};
     refreshWildsObstacles(s);s.player=makePlayer(safePosition(s,area.spawn));s.catMotion=makeCatMotion(s.player,s);populateWilds(s);getFloorMap(s);refreshInteraction(s);return s;
   }
@@ -185,7 +185,7 @@
     clearBufferedInputs(s);cancelGuard(s);cancelBow(s);cancelAttack(p);
   }
   function resetAtCamp(s){
-    const p=s.player;clearTransient(s);s.wilds.bossEntered=false;s.wilds.finalEntered=false;refreshWildsObstacles(s);populateWilds(s);
+    const p=s.player;clearTransient(s);s.autoLatch='camp';s.wilds.bossEntered=false;s.wilds.finalEntered=false;refreshWildsObstacles(s);populateWilds(s);
     Object.assign(p,safePosition(s,wildsData().spawn));p.y=p.groundY=supportHeight(s,p.x,p.z,p.y,p.radius);p.grounded=true;p.vx=p.vy=p.vz=0;p.hp=p.maxHp;p.potions=3;p.stamina=p.maxStamina;p.staminaDelay=0;p.sprinting=false;p.sprintExhausted=false;p.jumpAttack=false;p.airSpeed=6.4;
     p.hurtTimer=0;p.landTimer=0;p.combo=0;p.comboWindow=0;p.iFrames={hurtUntil:s.time+.8,dashUntil:0};p.dash.charges=2;p.dash.rechargeRemaining=0;p.dash.nextAllowedAt=0;p.dash.from=point(p);p.dash.previous=point(p);p.previousPosition=point(p);
     s.skillCooldowns.bolt=0;s.skillCooldowns.nova=0;s.catCooldown=0;s.catMotion=makeCatMotion(p,s);s.pendingChest=null;s.treasure=null;s.upgradeChoices=[];s.comboHits=0;s.comboTimeout=0;s.hitStop=0;
@@ -301,6 +301,7 @@
     const p=s.player;if(s.phase!=='play'||s.time<p.iFrames.hurtUntil||s.time<p.iFrames.dashUntil)return false;
     const dir=ctx.projectile?direction(finite(ctx.dirX),finite(ctx.dirZ)):direction(p.x-finite(enemy.x,p.x-1),p.z-finite(enemy.z,p.z),{x:finite(ctx.dirX,1),z:finite(ctx.dirZ)});
     if(guardHit(s,enemy,damage,ctx,dir))return false;
+    damage=Math.max(1,Math.round(damage*.8));
     if(p.catGuardCharges>0&&p.catGuardUntil>s.time){p.catGuardCharges=0;p.catGuardUntil=0;p.iFrames.hurtUntil=s.time+.16;emit(s,'catGuardBlock',centre(p),{targetId:'player',sourceId:enemy.id,damage},ctx);return false;}
     p.hp=Math.max(0,p.hp-damage);p.iFrames.hurtUntil=s.time+.65;p.invulnerable=.65;p.hurtTimer=.28;cancelDrink(s,'hurt');cancelAttack(p);cancelBow(s);cancelGuard(s);p.counterUntil=0;p.counterTargetId=null;p.combo=0;p.comboWindow=0;p.castTimer=0;p.castKind=null;p.castContext=null;p.actionBuffer=null;p.staminaDelay=Math.max(p.staminaDelay,.5);
     if(p.dash.active)finishDash(s,true);s.comboHits=0;s.comboTimeout=0;
@@ -335,7 +336,9 @@
     // New projectiles created by a ricochet/reflection are advanced next step.
     const active=s.projectiles.slice();
     for(const shot of active){
-      if(shot.life<=0)continue;const a=point(shot);shot.prevX=a.x;shot.prevY=a.y;shot.prevZ=a.z;
+      if(shot.life<=0)continue;
+      if(shot.homingId){const t=s.enemies.find(e=>e.id===shot.homingId&&activeEnemy(e));if(t){const q=projectileTargetPoint(t),dx=q.x-shot.x,dy=q.y-shot.y,dz=q.z-shot.z,l=Math.hypot(dx,dy,dz)||1,k=Math.min(1,dt*7);shot.vx+=(dx/l*shot.speed-shot.vx)*k;shot.vy+=(dy/l*shot.speed-shot.vy)*k;shot.vz+=(dz/l*shot.speed-shot.vz)*k;const n=Math.hypot(shot.vx,shot.vy,shot.vz)||1;shot.vx*=shot.speed/n;shot.vy*=shot.speed/n;shot.vz*=shot.speed/n;}}
+      const a=point(shot);shot.prevX=a.x;shot.prevY=a.y;shot.prevZ=a.z;
       let travel=shot.speed*dt;if(Number.isFinite(shot.legRemaining))travel=Math.min(travel,shot.legRemaining);
       const scale=shot.speed>EPS?travel/shot.speed:0,b={x:a.x+shot.vx*scale,y:a.y+shot.vy*scale,z:a.z+shot.vz*scale},wall=projectileWorldContact(s,a,b,shot.radius);
       shot.x=b.x;shot.y=b.y;shot.z=b.z;shot.life-=dt;
@@ -350,6 +353,8 @@
         for(const {e,t} of contacts){
           shot.hits.push(e.id+'|'+shot.pathLeg);const at={x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t},ctx={...shot.ctx,effectId:shot.ctx.effectId+'-'+shot.id,pathLeg:shot.pathLeg,dirX:shot.vx/shot.speed,dirZ:shot.vz/shot.speed,contactPoint:at};
           let amount=shot.pathLeg===1&&Number.isFinite(shot.returnDamage)?shot.returnDamage:shot.damage;
+          // Bosses shrug off part of each orb so fights still need the sword and dodging.
+          if(shot.magic&&e.type==='boss')amount=Math.max(1,Math.round(amount*.7));
           if(shot.kind==='windCut'||shot.kind==='returnCrescent'){
             ctx.explicitStatusPayload=shot.pathLeg===1?{id:'moonMark',ttl:4}:undefined;
             if(shot.pathLeg===0&&consumeStatus(s,e,'moonMark','nova',ctx))amount+=10;
@@ -488,17 +493,46 @@
     emit(s,'windCut',from,{from,to,projectileId:shot.id,dirX:dir.x,dirZ:dir.z,range,width:returning?1.8:1.2,duration:range/16,returning,damage:28},ctx);
     if(has(s,'gravityNova'))s.areaEffects.push({id:'area-'+(++s.areaSerial),kind:'windWhirl',x:to.x,y:supportHeight(s,to.x,to.z,to.y),z:to.z,radius:2.4,phase:'travel',dueAt:s.time+range/16,duration:.24,ctx:secondary(ctx,'gravityNova',{staggerClass:'heavy',explicitStatusPayload:{id:'offBalance',ttl:1.5}}),pulls:[]});
   }
-  function castCat(s){
+  // Pick the enemy the player most plausibly means: in front of the camera first, then nearest.
+  function magicTarget(s,range){
+    const p=s.player,dir={x:p.aimDirX,z:p.aimDirZ},aimed=s.enemies.find(e=>e.id===p.aimTargetId&&activeEnemy(e)&&groundDist(e,p)<=range);if(aimed)return aimed;
+    return nearby(s,centre(p),range).map(e=>{const v=direction(e.x-p.x,e.z-p.z,dir),align=v.x*dir.x+v.z*dir.z;return{e,score:groundDist(e,p)*(align>.55?1:2.6)};}).sort((a,b)=>a.score-b.score)[0]?.e||null;
+  }
+  function castMagic(s){
+    const p=s.player,target=magicTarget(s,18),from={x:p.x+p.aimDirX*.5,y:p.y+1.35,z:p.z+p.aimDirZ*.5},to=target?projectileTargetPoint(target):p.aimPoint&&dist(from,p.aimPoint)>.5?point(p.aimPoint):{x:from.x+p.aimDirX*16,y:from.y,z:from.z+p.aimDirZ*16};
+    const dir=direction(to.x-p.x,to.z-p.z,{x:p.aimDirX,z:p.aimDirZ}),damage=Math.round(12*(1+.12*s.wilds.upgradeWeapon)),ctx=context(s,'bolt',{dirX:dir.x,dirZ:dir.z,hitStopClass:'none',explicitStatusPayload:{id:'moonMark',ttl:4}});
+    p.aimDirX=dir.x;p.aimDirZ=dir.z;p.castTimer=.16;p.castKind='magic';p.castFacing=p.facing;p.castContext=ctx;s.skillCooldowns.magic=.55;
+    emit(s,'magicCast',from,{dirX:dir.x,dirZ:dir.z,targetId:target?.id,skill:'magic'},ctx);
+    projectile(s,'bowArrow',from,to,19,damage,ctx,{magic:true,homingId:target?.id,remainingHits:1,canRicochet:true,life:1.4,radius:.22});return true;
+  }
+  function castStarfall(s){
+    const p=s.player,target=magicTarget(s,15),at=target?point(target):{x:p.x+p.aimDirX*5,y:p.y,z:p.z+p.aimDirZ*5},y=supportHeight(s,at.x,at.z,at.y+1),ctx=context(s,'nova',{staggerClass:'heavy',hitStopClass:'none',explicitStatusPayload:{id:'offBalance',ttl:1.5}});
+    p.castTimer=.34;p.castKind='nova';p.castFacing=p.facing;p.castContext=ctx;s.skillCooldowns.starfall=8;
+    s.areaEffects.push({id:'area-'+(++s.areaSerial),kind:'starfall',x:at.x,y,z:at.z,radius:3.6,dueAt:s.time+.8,ctx});
+    emit(s,'starfallCast',{x:at.x,y,z:at.z},{radius:3.6,duration:.8,skill:'starfall',from:centre(p)},ctx);return true;
+  }
+  function autoAssist(s,move){
+    const p=s.player;
+    // Low health: drink once, then wait before considering another flask.
+    if(p.hp<=p.maxHp*.4&&p.potions>0&&s.time>=s.autoHealAt&&p.hurtTimer<=EPS&&beginDrink(s)){s.autoHealAt=s.time+3;emit(s,'autoAssist',p,{kind:'heal'});}
+    // The cat joins fights on its own.
+    if(s.catCooldown<=EPS&&actionReady(p)&&s.enemies.some(e=>activeEnemy(e)&&e.aggro&&groundDist(e,p)<7.5)){const keep={x:p.aimDirX,z:p.aimDirZ},t=magicTarget(s,7.5);if(t){const v=direction(t.x-p.x,t.z-p.z);p.aimDirX=v.x;p.aimDirZ=v.z;if(castCat(s,true))s.catCooldown=5.5;else{p.aimDirX=keep.x;p.aimDirZ=keep.z;}}}
+    // Walking into a low walkable ledge hops onto it.
+    if(p.grounded&&move.length>.05&&p.jumpBuffer<=0&&actionReady(p)){const qx=p.x+move.x*.7,qz=p.z+move.z*.7;for(const o of s.obstacles){if(!o.walkable||Math.abs(qx-o.x)>o.w/2||Math.abs(qz-o.z)>o.d/2)continue;const rise=finite(o.y)+o.height-p.y;if(rise>.2&&rise<1.4){p.jumpBuffer=.16;break;}}}
+  }
+  function castCat(s,auto=false){
     const p=s.player,dir={x:p.aimDirX,z:p.aimDirZ},cat=s.catMotion,targets=nearby(s,centre(p),8).map(e=>{const v=direction(e.x-p.x,e.z-p.z,dir);return{e,alignment:v.x*dir.x+v.z*dir.z,marked:statusActive(s,e,'moonMark')||statusActive(s,e,'offBalance')};}).filter(item=>item.alignment>=.5&&visible(s,{...cat.position,y:cat.position.y+.9},centre(item.e)));
-    targets.sort((a,b)=>Number(b.e.id===p.aimTargetId)-Number(a.e.id===p.aimTargetId)||Number(b.marked)-Number(a.marked)||b.alignment-a.alignment||groundDist(a.e,p)-groundDist(b.e,p));const target=targets[0]?.e;if(!target||!spendStamina(p,12,.45))return false;
+    targets.sort((a,b)=>Number(b.e.id===p.aimTargetId)-Number(a.e.id===p.aimTargetId)||Number(b.marked)-Number(a.marked)||b.alignment-a.alignment||groundDist(a.e,p)-groundDist(b.e,p));const target=targets[0]?.e;if(!target||!auto&&!spendStamina(p,12,.45))return false;
     const ctx=context(s,'cat',{dirX:dir.x,dirZ:dir.z,hitStopClass:'none'}),duration=clamp(groundDist(cat.position,target)/26,.16,.3);
-    cancelBow(s);cancelGuard(s);s.catCooldown=4.5;p.castTimer=.12;p.castKind='cat';p.castFacing=p.facing;p.castContext=ctx;
+    cancelBow(s);cancelGuard(s);s.catCooldown=4.5;if(!auto){p.castTimer=.12;p.castKind='cat';}p.castFacing=p.facing;p.castContext=ctx;
     emit(s,'cat',p,{value:34,damage:34,range:8,skill:'cat',targetId:target.id,from:point(cat.position),to:catPoint(target)},ctx);
     schedule(s,'catStart',ctx,{targetId:target.id,damage:34,bounces:has(s,'catHunt')?2:0,visited:[],duration});return true;
   }
   function areasStep(s,dt){
     for(const a of s.areaEffects){
-      if(a.resolved||a.kind!=='windWhirl')continue;
+      if(a.resolved)continue;
+      if(a.kind==='starfall'){if(s.time+EPS<a.dueAt)continue;a.resolved=true;const hits=nearby(s,{x:a.x,y:a.y+.9,z:a.z},a.radius);emit(s,'starfall',a,{radius:a.radius,value:42,damage:42,skill:'starfall',hits:hits.length},a.ctx);for(const e of hits){const dir=direction(e.x-a.x,e.z-a.z);damageEnemy(s,e,Math.round(42*(1+.12*s.wilds.upgradeWeapon)),{...a.ctx,dirX:dir.x,dirZ:dir.z,contactPoint:centre(e)});}continue;}
+      if(a.kind!=='windWhirl')continue;
       if(a.phase==='travel'){
         if(s.time+EPS<a.dueAt)continue;a.phase='pull';a.createdAt=s.time;a.dueAt=s.time+a.duration;
         for(const e of nearby(s,{x:a.x,y:a.y+.9,z:a.z},a.radius)){const dir=direction(e.x-a.x,e.z-a.z),pull=e.type==='boss'?0:Math.min(1.5,Math.max(0,groundDist(e,a)-.7));a.pulls.push({targetId:e.id,from:point(e),to:{x:e.x-dir.x*pull,y:e.y,z:e.z-dir.z*pull}});if(pull>0)e.pulledUntil=a.dueAt;}
@@ -574,7 +608,7 @@
     for(const key of ['comboWindow','hurtTimer','castTimer','attackBuffer','jumpBuffer','dashBuffer','staminaDelay','landTimer','guardRaiseTimer','guardImpactTimer','guardBreakTimer'])p[key]=Math.max(0,p[key]-dt);
     if(p.counterUntil<=s.time){p.counterUntil=0;p.counterTargetId=null;}
     if(p.castTimer<=0){p.castKind=null;p.castContext=null;}if(p.comboWindow<=0&&p.attackPhase==='idle')p.combo=0;
-    for(const id of ['bolt','nova'])s.skillCooldowns[id]=Math.max(0,s.skillCooldowns[id]-dt);s.catCooldown=Math.max(0,s.catCooldown-dt);
+    for(const id of ['bolt','nova','magic','starfall'])s.skillCooldowns[id]=Math.max(0,s.skillCooldowns[id]-dt);s.catCooldown=Math.max(0,s.catCooldown-dt);
     if(d.charges<2){d.rechargeRemaining-=dt;if(d.rechargeRemaining<=EPS){d.charges++;d.rechargeRemaining=d.charges<2?d.rechargeRemaining+ROLL.recharge:0;}}
     p.dodgeTimer=0;p.dodgeCooldown=Math.max(0,d.nextAllowedAt-s.time);p.invulnerable=Math.max(0,p.iFrames.hurtUntil-s.time,p.iFrames.dashUntil-s.time);
     if(p.mirror&&p.mirror.expiresAt<=s.time)p.mirror=null;
@@ -623,8 +657,10 @@
     emit(s,'bossAwake',boss,{targetId:boss.id,name:boss.bossName,bossKind:'sweetheart'});
   }
   function explorationStep(s,input){
-    refreshInteraction(s);const p=s.player,i=s.interaction;
-    if(!input.interact||!i||!interactionReady(p))return;
+    refreshInteraction(s);const p=s.player,i=s.interaction,key=i?i.kind+':'+(i.id||''):null;
+    if(!i){if(p.grounded&&p.hp>0)s.autoLatch=null;return;}
+    const auto=key!==s.autoLatch&&!(i.kind==='camp'&&s.autoLatch==='camp');
+    if(!(input.interact||auto)||!interactionReady(p))return;s.autoLatch=i.kind==='camp'?'camp':key;
     if(i.kind==='camp'){rest(s);return;}
     if(i.kind==='chest'){openChest(s,s.chests.find(c=>c.id===i.id));return;}
     if(i.kind==='recover'){const drop=s.wilds.deathDrop;s.coins+=drop.coins;emit(s,'emberRecovered',drop,{value:drop.coins});s.wilds.deathDrop=null;}
@@ -647,7 +683,7 @@
   }
   function captureInput(s,input){
     const pressed={},released=!input.bolt&&!!s.inputLatch.bolt;
-    for(const key of ['dash','jump','heal','interact','attack','cat','bolt','guard','switchWeapon']){
+    for(const key of ['dash','jump','heal','interact','attack','cat','bolt','guard','switchWeapon','magic','starfall']){
       const down=key==='dash'?!!(input.dash||input.dodge):!!input[key];pressed[key]=down&&!s.inputLatch[key];s.inputLatch[key]=down;
     }
     if(!input.guard)cancelGuard(s);
@@ -710,7 +746,7 @@
     if(pressed.jump)p.jumpBuffer=.16;if(pressed.dash)p.dashBuffer=.24;
     if(pressed.heal)beginDrink(s);
     const dashStarted=p.dashBuffer>0&&startDash(s,{x:mx,z:mz});
-    if(p.jumpBuffer>0&&interactionReady(p)&&spendStamina(p,16,.4)){cancelGuard(s);p.jumpBuffer=0;p.airSpeed=p.sprinting?10.2:6.4;p.grounded=false;p.vy=8.9;p.landTimer=0;emit(s,'jump',p,{targetId:'player',velocity:p.vy});}
+    if(p.jumpBuffer>0&&interactionReady(p)&&spendStamina(p,16,.4)){cancelGuard(s);p.jumpBuffer=0;p.airSpeed=p.sprinting?10.2:7.6;p.grounded=false;p.vy=8.9;p.landTimer=0;emit(s,'jump',p,{targetId:'player',velocity:p.vy});}
     if(!dashStarted){
       for(const key of ['cat','bolt'])if(pressed[key]&&(key!=='bolt'||p.weaponMode==='bow')&&(!actionReady(p)||p.actionBuffer||actionCooldown(s,key)>EPS))bufferSkill(s,key);
       if(p.bowCharging&&input.bolt){p.bowElapsed=Math.min(.6,p.bowElapsed+dt);p.bowCharge=clamp((p.bowElapsed-.12)/.48,0,1);}
@@ -721,6 +757,8 @@
       }
     }
     processActions(s,{attack:pressed.attack,boltHeld:!!input.bolt,cat:pressed.cat,bolt:pressed.bolt});
+    if(!dashStarted&&actionReady(p)){if((input.magic||pressed.magic)&&s.skillCooldowns.magic<=EPS)castMagic(s);else if(pressed.starfall&&s.skillCooldowns.starfall<=EPS)castStarfall(s);}
+    autoAssist(s,{x:mx,z:mz,length});
     guardStep(s,input,pressed.guard,dt);
     meleeStep(s,dt);const before=point(p);p.previousPosition=before;
     if(!p.grounded){p.y+=p.vy*dt;p.vy-=21*dt;}
@@ -730,7 +768,7 @@
     if(d.active){
       const slice=Math.min(dt,d.duration-d.elapsed);d.previous=before;const blocked=moveDisc(s,p,d.dirX*(ROLL.distance/ROLL.duration)*slice,d.dirZ*(ROLL.distance/ROLL.duration)*slice,true);d.elapsed+=slice;if(blocked||d.elapsed>=d.duration-EPS)finishDash(s,blocked);
     }else{
-      const attacking=p.attackPhase!=='idle',speed=p.guardBreakTimer>EPS?0:p.healTimer>0?.65:p.hurtTimer>0?1.6:p.guardActive?2.1:p.bowCharging?2.8:attacking?2.1:p.castTimer>0?2.5:p.sprinting?10.2:!p.grounded?p.airSpeed:6.4;
+      const attacking=p.attackPhase!=='idle',speed=p.guardBreakTimer>EPS?0:p.healTimer>0?.65:p.hurtTimer>0?1.6:p.guardActive?2.1:p.bowCharging?2.8:attacking?2.1:p.castTimer>0?2.5:p.sprinting?10.2:!p.grounded?p.airSpeed:7.6;
       const spec=attacking?ATTACKS[p.combo-1]:null,surge=attacking&&p.attackPhase!=='recovery'?spec.lunge/(spec.windup+spec.active):0;
       moveDisc(s,p,(mx*speed+p.attackDirX*surge)*dt,(mz*speed+p.attackDirZ*surge)*dt);
     }

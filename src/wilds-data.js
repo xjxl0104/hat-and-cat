@@ -4,7 +4,7 @@ root.HatWilds={
  id:'golden-wake',name:'暮丘遗迹',subtitle:'越过荒草低谷，走向高地上的暮钟',
  bounds:{minX:-28,maxX:28,minZ:-32,maxZ:28},spawn:{x:-19,y:0,z:21},
  camp:{id:'camp',name:'旅人的营火',x:-19,y:0,z:19},
- bossGate:{x:0,y:0,z:-12.2,spawn:{x:0,y:0,z:-16},width:5.6},
+ bossGate:{x:0,y:0,z:-12.2,spawn:{x:0,y:0,z:-18.5},width:5.6},
  bossArena:{minX:-9,maxX:9,minZ:-31,maxZ:-14},
  shortcut:{id:'shortcut-barrier',x:-19,y:0,z:-5,lever:{x:-19,y:0,z:-8},name:'荒庭近路'},
  exit:{x:0,y:0,z:-29},
@@ -29,6 +29,14 @@ root.HatWilds={
   {id:'west-tree',x:-24,z:11,w:1.5,d:1.5,height:6,kind:'tree'},
   {id:'east-tree',x:23,z:17,w:1.9,d:1.9,height:8,kind:'tree'},
   {id:'broken-cart',x:8,z:17,w:3,d:1.8,height:1.1,walkable:true,kind:'cart'},
+  // Kenney CC0 props that are big enough to block the way.
+  {id:'camp-tent',x:-24.6,z:23.4,w:2.6,d:2,height:1.9,kind:'prop',model:'nature-kit/tent_detailedOpen',rot:.55},
+  {id:'camp-wood',x:-14.4,z:23.2,w:1.2,d:1.6,height:1,kind:'prop',model:'nature-kit/log_stack',rot:.2},
+  {id:'camp-stall',x:-25.2,z:14.2,w:2,d:2,height:2.4,kind:'prop',model:'fantasy-town-kit/stall-red',rot:1.35},
+  {id:'ruin-head',x:24.6,z:-3.2,w:2.2,d:1.8,height:2.6,kind:'prop',model:'nature-kit/statue_head',rot:-1.2},
+  {id:'ruin-obelisk',x:9.4,z:-4.4,w:.8,d:.8,height:3,kind:'prop',model:'nature-kit/statue_obelisk',rot:.4},
+  {id:'meadow-fountain',x:7.5,z:22.5,w:3.4,d:3.4,height:.8,kind:'prop',model:'fantasy-town-kit/fountain-round-detail'},
+  {id:'east-boulder',x:25,z:11,w:2,d:2.8,height:1.9,kind:'prop',model:'fantasy-town-kit/rock-wide',rot:.3},
   // Warm lanterns line the old road beside the paving, never on it.
   {id:'lantern-camp',x:-14.4,z:18.4,w:.4,d:.4,height:2.3,kind:'lantern'},
   {id:'lantern-meadow',x:-11.8,z:9.2,w:.4,d:.4,height:2.3,kind:'lantern'},

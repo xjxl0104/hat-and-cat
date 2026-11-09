@@ -160,11 +160,11 @@
       layer(source, { duration, volume, frequency, endFrequency, pan, q, filter: 'bandpass', offset: between(0, 1.5) });
     }
 
-    function oscillator(frequency, endFrequency, duration, volume, pan, shape) {
+    function oscillator(frequency, endFrequency, duration, volume, pan, shape, delay = 0) {
       const source = ctx.createOscillator(); source.type = shape || 'sine';
-      source.frequency.setValueAtTime(frequency, ctx.currentTime);
-      if (endFrequency) source.frequency.exponentialRampToValueAtTime(endFrequency, ctx.currentTime + duration);
-      layer(source, { duration, volume, pan, frequency: 11000 });
+      source.frequency.setValueAtTime(frequency, ctx.currentTime + delay);
+      if (endFrequency) source.frequency.exponentialRampToValueAtTime(endFrequency, ctx.currentTime + delay + duration);
+      layer(source, { duration, volume, pan, frequency: 11000, delay });
     }
 
     function metal(base, volume, pan, duration) {
@@ -225,7 +225,7 @@
       if (!event || typeof event.type !== 'string') return false;
       const aliases = { slash: 'swing', footstep: 'step', landing: 'land', enemyDeath: 'kill', shatter: 'kill', enemyAttack: 'enemySwing', victory: 'win', bossStart: 'arenaStart', pickupCoin: 'pickup' };
       const type = aliases[event.type] || event.type;
-      const allowed = ['attack','swing','hit','hurt','kill','windup','enemySwing','step','land','jump','dodge','cat','heal','pickup','checkpoint','chest','arenaStart','arenaClear','bossPhase','win','death','ui','bolt','nova','projectile','projectileHit','upgrade','stageClear','treasureOpen','treasureReveal','encounterSpawn','bowDraw','windCut','windWhirl','catGuardBlock','guardStart','block','parry','guardBreak','counterStrike','weaponSwap'];
+      const allowed = ['magicCast','starfallCast','starfall','attack','swing','hit','hurt','kill','windup','enemySwing','step','land','jump','dodge','cat','heal','pickup','checkpoint','chest','arenaStart','arenaClear','bossPhase','win','death','ui','bolt','nova','projectile','projectileHit','upgrade','stageClear','treasureOpen','treasureReveal','encounterSpawn','bowDraw','windCut','windWhirl','catGuardBlock','guardStart','block','parry','guardBreak','counterStrike','weaponSwap'];
       if (!allowed.includes(type)) return false;
       const now = ctx.currentTime, gap = type === 'step' ? .075 : type === 'hit' ? .018 : .035;
       if (now - (lastEffects.get(type) ?? -Infinity) < gap) return false;
@@ -248,6 +248,9 @@
         else if (type === 'bowDraw') { noise(.16,.055,350,1100,pan,'brown',1.4);oscillator(140,220,.16,.025,pan,'triangle'); }
         else if (type === 'bolt') { noise(.07,.16,2600,750,pan,'white');oscillator(event.charged?290:370,90,.11,event.charged?.08:.05,pan,'triangle'); }
         else if (type === 'windCut') { noise(.16,.18,600,2300,pan,'brown',.6);metal(510,.025,pan,.12); }
+        else if (type === 'magicCast') { oscillator(880*pitch,1320*pitch,.09,.03,pan,'triangle');oscillator(1320*pitch,1760*pitch,.07,.016,pan,'square');noise(.06,.05,5200,2600,pan,'white'); }
+        else if (type === 'starfallCast') { [659.25,783.99,987.77,1318.5].forEach((f,i)=>oscillator(f,f*1.01,.16,.03,pan,'triangle',i*.07)); noise(.5,.06,3000,7000,pan,'white',.5); }
+        else if (type === 'starfall') { body(.5,pan,true); noise(.45,.34,240,3200,pan,'brown',.4); [1046.5,1318.5,1568].forEach((f,i)=>oscillator(f,f*.98,.3,.03,pan,'triangle',.05+i*.04)); duck(.3,.3); }
         else if (type === 'windWhirl') { noise(.2,.10,1200,400,pan,'brown',.7); }
         else if (type === 'catGuardBlock') { metal(630,.06,pan,.16);oscillator(390,510,.12,.035,pan,'triangle'); }
         else if (type === 'nova') { body(.4,pan,true); noise(.42,.34,240,3600,pan,'brown',.4); metal(420,.10,pan-.2,.45); metal(840,.07,pan+.2,.38); duck(.3,.3); }

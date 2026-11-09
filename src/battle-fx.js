@@ -145,7 +145,7 @@ function create({THREE:T,scene,camera:cameraView,reduced=true,getBladeSegment=nu
  function travel(e){flight.set(finite(e.vx,finite(e.dirX,1)),finite(e.vy,finite(e.dirY)),finite(e.vz,finite(e.dirZ)));if(flight.lengthSq()<.0001)flight.set(1,0,0);flight.normalize();flightQ.setFromUnitVectors(AXIS,flight);}
  function putArrow(i,p,q,scale=1){put(arrowShafts,i,p,q,scale);put(arrowTips,i,p,q,scale);put(arrowVanes,i,p,q,scale);}
  function lodgeArrow(e){if(lodged.length>=LODGE_CAP)lodged.shift();travel(e);const p=point(e),normal=e.normal||{};lodged.push({p:{x:p.x-flight.x*.6+finite(e.normalX,finite(normal.x))*.015,y:p.y-flight.y*.6+finite(e.normalY,finite(normal.y))*.015,z:p.z-flight.z*.6+finite(e.normalZ,finite(normal.z))*.015},q:flightQ.clone(),life:.6});}
- function updateProjectiles(game,dt){let a=0,b=0,h=0,f=0,w=0,n=0,k=0;for(const p of game.projectiles||[]){if(p.dead||p.life<=0||n>=PROJECTILE_CAP)continue;n++;travel(p);const kind=p.kind||'bolt';
+ function updateProjectiles(game,dt){let a=0,b=0,h=0,f=0,w=0,n=0,k=0;for(const p of game.projectiles||[]){if(p.dead||p.life<=0||p.magic||n>=PROJECTILE_CAP)continue;n++;travel(p);const kind=p.kind||'bolt';
    if(['arrow','bowArrow','ricochetBolt','bolt'].includes(kind))putArrow(a++,p,flightQ,1+finite(p.charge)*.14);
    else if(kind==='bossOrb'){put(coals,f,p,flightQ,.29,.29,.29);put(flames,f++,p,flightQ,.85,1,1);}
    else if(kind==='cake'){dummy.quaternion.setFromAxisAngle(UP,time*7+finite(p.prevX));const q=dummy.quaternion;put(cakeBases,k,p,q,.44,.26,.44);put(cakeTops,k,{x:p.x,y:p.y+.16,z:p.z},q,.47,.09,.47);put(cherries,k++,{x:p.x,y:p.y+.27,z:p.z},q,.11,.11,.11);}

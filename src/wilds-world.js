@@ -41,6 +41,8 @@ function create({THREE:T,scene}){
   const colors=[],c=new T.Color(),isTree=id.includes('tree_'),isPlant=/grass|plant_|moss/.test(id),isCastle=id.startsWith('castle-kit/'),isBanner=id.includes('flag-');
   for(let i=0;i<source.colors.length;i+=3){
    const r=source.colors[i]/255,g=source.colors[i+1]/255,b=source.colors[i+2]/255,lum=r*.2126+g*.7152+b*.0722;let tint='#79796d';
+   // Detail props keep the kit's own colours, nudged warm for the dusk light.
+   if(variant==='native'){c.setRGB(r,g,b,T.SRGBColorSpace);colors.push(c.r*.98,c.g*.9,c.b*.8);continue;}
    if(isTree){const leaf=id.includes('fall')?r-b>.22:g>r*.93&&g>b*1.12;tint=leaf?(variant==='gold'?'#e39a3c':id.includes('pine')?'#3f6b52':'#7f9d47'):'#5e4636';}
    else if(isPlant)tint=id.includes('moss')?'#6f8a45':variant==='straw'?'#d2b45f':'#82a446';
    else if(isBanner)tint=Math.max(r,g,b)-Math.min(r,g,b)>.12?'#b03f52':'#e0b45e';
@@ -203,10 +205,8 @@ function create({THREE:T,scene}){
   art('nature-kit/statue_columnDamaged',o.x,y,o.z,o.w,o.height,o.d);
  }
  function cart(o){
-  const y=finite(o.y);stamp(m.wood,o.x,y+o.height*.5,o.z,o.w,o.height,o.d);
-  stamp(m.iron,o.x,y+.12,o.z,o.w,.24,o.d);
-  for(let i=0;i<6;i++)stamp(i%2?m.wood:m.barkLight,o.x-o.w/2+(i+.5)*o.w/6,y+o.height-.035,o.z,o.w/6-.035,.07,o.d);
-  for(const side of [-1,1])for(const dx of [-.9,.9]){stamp(m.iron,o.x+dx,y+.37,o.z+side*(o.d/2-.07),.62,.62,.14);stamp(m.goldDark,o.x+dx,y+.37,o.z+side*(o.d/2-.015),.17,.17,.03);}
+  const y=finite(o.y);art('fantasy-town-kit/cart',o.x,y,o.z,o.d,1.55,o.w,Math.PI/2+.08,'native');
+  prop('nature-kit/crop_pumpkin',o.x+1.9,o.z+.9,.42,.6);prop('nature-kit/crop_pumpkin',o.x+2.3,o.z+.2,.3,2);prop('fantasy-town-kit/wheel',o.x-1.9,o.z+1.1,.75,1.3);
  }
  function tree(x,z,height,width,backdrop=false,base=H(x,z)){
   const spread=height*.84;art('nature-kit/tree_oak_fall',x,base,z,spread,height+3.2,spread*.95,.3,'gold');
@@ -217,6 +217,7 @@ function create({THREE:T,scene}){
  function obstacleScenery(){
   for(const o of data.obstacles){
    if(o.kind==='gate')continue;
+   if(o.kind==='prop'){prop(o.model,o.x,o.z,o.height,o.rot||0);continue;}
    if(o.kind==='tree'){tree(o.x,o.z,o.height,o.w,false,finite(o.y));continue;}
    if(o.kind==='cart'){cart(o);continue;}
    if(o.kind==='pillar'){statue(o);continue;}
@@ -228,6 +229,45 @@ function create({THREE:T,scene}){
     // All four faces advertise a genuine jump ledge, with no fake walk-up steps.
     for(const dx of [-1.8,-.6,.6,1.8])stamp(m.stoneLight,o.x+dx,finite(o.y)+.56,o.z+o.d/2-.02,.16,.45,.04);
    }
+  }
+ }
+ function prop(id,x,z,height,rotation=0,y=H(x,z)-.02){
+  const size=root.HatArtAssets[id].size,s=height/size[1];art(id,x,y,z,size[0]*s,height,size[2]*s,rotation,'native');
+ }
+ // Kenney CC0 detail pass: flower beds, forest-floor clutter, a camp, and a
+ // border forest. None of this is solid; solid props live in HatWilds.obstacles.
+ function details(){
+  const b=data.bounds,flowers=['flower_redA','flower_yellowA','flower_purpleA','flower_redB','flower_yellowB','flower_purpleB'];
+  for(let x=b.minX+.9;x<b.maxX-.6;x+=1.15)for(let z=b.minZ+1;z<b.maxZ-.6;z+=1.2){
+   const bed=noise(Math.floor(x/5),Math.floor(z/5),61),n=noise(x,z,62);if(bed<.58||n<.5)continue;
+   const xx=x+(noise(z,x,63)-.5)*.6,zz=z+(noise(x,z,64)-.5)*.6;if(!clearGrass(xx,zz))continue;
+   prop('nature-kit/'+flowers[Math.floor(noise(Math.floor(x/3),Math.floor(z/3),65)*6)],xx,zz,.3+n*.22,n*9);
+  }
+  for(let x=b.minX+1.2;x<b.maxX-.8;x+=2.6)for(let z=b.minZ+1.2;z<b.maxZ-.8;z+=2.4){
+   const n=noise(x,z,71),xx=x+(noise(z,x,72)-.5)*1.6,zz=z+(noise(x,z,73)-.5)*1.6;if(n<.8||!clearGrass(xx,zz))continue;
+   const pick=Math.floor(noise(z,x,74)*8),r=n*9;
+   if(pick<2)prop('nature-kit/rock_smallA',xx,zz,.32+n*.2,r);else if(pick<3)prop('nature-kit/rock_smallFlatA',xx,zz,.12,r);
+   else if(pick<4)prop('nature-kit/mushroom_redGroup',xx,zz,.42,r);else if(pick<5)prop('nature-kit/mushroom_tanGroup',xx,zz,.4,r);
+   else if(pick<6)prop('nature-kit/plant_bushDetailed',xx,zz,.62,r);else if(pick<7)prop('nature-kit/grass_leafs',xx,zz,.4,r);else prop('nature-kit/plant_flatTall',xx,zz,.55,r);
+  }
+  // The traveller's camp: tent, firewood, a seat and a signpost toward the road.
+  prop('nature-kit/log',-21.4,21.6,.42,1.25);prop('nature-kit/stump_roundDetailed',-16.8,21.4,.48);prop('nature-kit/pot_large',-22.2,17.2,.5,.4);
+  prop('nature-kit/sign',-15.6,15.2,1.2,-.75);for(const [x,z,r] of [[-26.3,22],[-25.8,21.2],[-22.5,25.2]])prop('nature-kit/crop_pumpkin',x,z,.38,r);
+  prop('nature-kit/path_stoneCircle',-19,19,.05);
+  // Ruins and road clutter, kept off the paving.
+  prop('fantasy-town-kit/fence-broken',21.3,9.6,.9,.3);prop('fantasy-town-kit/fence-broken',9.7,11.2,.9,1.7);prop('nature-kit/log',4.3,14,.4,.6);prop('nature-kit/stump_old',-12.2,4.4,.55);
+  for(const [x,z] of [[-24,11],[23,17],[-9,5]])for(let i=0;i<4;i++){const a=i*1.7+x,r=2+noise(i,z,75),xx=x+Math.cos(a)*r,zz=z+Math.sin(a)*r;if(clearGrass(xx,zz))prop('nature-kit/mushroom_redTall',xx,zz,.36+noise(i,x,76)*.2,a);}
+  // Banners on the chapel facade and hedges framing its door.
+  const front=H(0,-12.4);for(const x of [-8.6,-4.2,4.2,8.6])art('fantasy-town-kit/banner-red',x,front+2.2,-12.42,.06,2.5,1.15,Math.PI/2,'native');
+  for(const side of [-1,1])for(const z of [-6.5,-9])prop('fantasy-town-kit/hedge',side*5.3,z,.55,0,H(side*5.3,z)-.03);
+  // Border forest: mixed species just outside the walkable bounds.
+  const trees=['nature-kit/tree_default','nature-kit/tree_oak','nature-kit/tree_fat_fall','nature-kit/tree_cone_fall','nature-kit/tree_pineRoundA','nature-kit/tree_small_fall','fantasy-town-kit/tree-crooked'];
+  const ring=[];for(let x=b.minX-1;x<=b.maxX+1;x+=2.7){ring.push([x,b.maxZ,0,1]);if(x<-11||x>11)ring.push([x,b.minZ,0,-1]);}
+  for(let z=b.minZ;z<=b.maxZ;z+=2.7){ring.push([b.minX,z,-1,0]);ring.push([b.maxX,z,1,0]);}
+  for(const [bx,bz,ox,oz] of ring)for(let k=0;k<2;k++){
+   const n=noise(bx+k*7,bz,81),off=1.6+k*3.4+n*2.2,x=bx+ox*off+(oz?(n-.5)*2:0),z=bz+oz*off+(ox?(n-.5)*2:0);
+   if(n<.18)continue;prop(trees[Math.floor(noise(bz,bx+k,82)*trees.length)],x,z,4.2+n*4+k*1.5,n*7,H(x,z)-.1);
+   if(n>.6)prop('nature-kit/plant_bushLarge',x-ox*1.2+.8,z-oz*1.2,.9,n*5);
   }
  }
  function lantern(o){
@@ -387,7 +427,7 @@ function create({THREE:T,scene}){
   clear();data=root.HatWilds;if(!data||!root.HatTerrain||!root.HatArtAssets)throw new Error('HatTerrain, HatArtAssets and HatWilds must load before HatWildsWorld');
   unit=geometry(new T.BoxGeometry(1,1,1));queryMaterial=material('#ffffff',true,{side:T.DoubleSide});m=makePalette();
   scene.background=new T.Color(palette.sky);scene.fog=new T.Fog(palette.fog,30,122);
-  sky();ridges();terrain();meadow();obstacleScenery();chapel();relicArch();skyline();campBuild();shortcutBuild();mistBuild();
+  sky();ridges();terrain();meadow();details();obstacleScenery();chapel();relicArch();skyline();campBuild();shortcutBuild();mistBuild();
   for(const c of game.chests||data.chests)chestBuild(c);deathDropBuild();flush();update(game,0,0);group.updateMatrixWorld(true);queryGroup.updateMatrixWorld(true);return true;
  }
  function update(game,dt,time){

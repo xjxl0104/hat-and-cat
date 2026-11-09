@@ -151,7 +151,7 @@
         ctx.fillStyle='rgba(6,15,26,.82)';ctx.fillRect(882,57,378,109);ctx.font='16px sans-serif';ctx.fillStyle='#bcebea';ctx.fillText(dashLine(state),896,84,350);ctx.fillStyle='#c4d4ff';ctx.fillText(p.weaponMode==='bow'?'左 / 右键 蓄箭，松开发射':p.guardBreakTimer>0?'防御崩溃':p.counterUntil>state.time?'精准格挡 · 左键反击':p.guardActive?'右键 正面举盾':'右键 格挡 · C 换弓',896,115,350);ctx.fillStyle='#ffe0b0';ctx.fillText(skillLine(state,'cat','E','猫咪'),896,146,350);
         ownedPerksOverlay(state);
         if(state.phase==='upgrade')upgradeOverlay(state);
-        ctx.fillStyle='rgba(6,15,26,.8)';ctx.fillRect(20,648,1240,55);ctx.font='16px sans-serif';ctx.fillStyle='#d4dfd8';ctx.fillText('WASD 移动 · Shift 疾跑 · 空格 跳跃 · 左键 斩击 · 右键 格挡 · C 换武器 · Q 闪避 · E 猫扑 · R 喝药 · F 交互',34,671,1212);
+        ctx.fillStyle='rgba(6,15,26,.8)';ctx.fillRect(20,648,1240,55);ctx.font='16px sans-serif';ctx.fillStyle='#d4dfd8';ctx.fillText('WASD 移动 · 左键 挥剑 · 右键 魔法弹 · 空格 翻滚 · Q 流星雨',34,671,1212);
         ctx.font='11px sans-serif';ctx.fillStyle='#97aaa9';ctx.fillText('Original 8-bit score · Pulse lead / Arpeggio / Triangle bass / Noise drums · '+(audio?.getState?.()?.title||'草帽与猫'),34,694);
         const phase={ready:'准备',play:'荒庭探索',rest:'营火休整',paused:'游戏暂停',treasure:'遗物亮相',upgrade:'选择遗物',dead:'余火未熄',won:'守誓终归余晖'}[state.phase]||String(state.phase||'');
         const seconds=(elapsed(s)/1000).toFixed(1);ctx.font='16px sans-serif';ctx.fillStyle='#ffe39c';ctx.fillText(phase+' · REC '+seconds+'s',900,42,350);

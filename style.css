@@ -94,3 +94,6 @@ dialog{background:var(--panel-solid);border:1px solid var(--edge-strong);border-
 @keyframes fall{0%{transform:translate(0,-20px) rotate(0)}100%{transform:translate(var(--sway),105vh) rotate(720deg)}}
 @media(max-width:700px){#boss-name{font-size:12px;padding:5px 14px}#boss-name::before,#boss-name::after{margin:0 6px}.ability{width:46px}#objective{top:112px}}
 @media(prefers-reduced-motion:reduce){#hurt-vignette.on,#confetti{animation:none;display:none}}
+
+/* Chase camera: the aim point sits above the hero's head, matching shoulder-camera's screenCentre. */
+#reticle{top:48%}
